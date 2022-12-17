@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "stackdeobfuscator",
+  "version": "${version}",
+  "name": "StackDeobfuscator",
+
+  "description": "Deobfuscates stacktraces",
+  "authors": [
+    "booky10"
+  ],
+
+  "license": "GPL-3.0",
+  "environment": "client",
+  "accessWidener": "stackdeobfuscator.accesswidener",
+
+  "entrypoints": {
+    "preLaunch": [
+      "com.llamalad7.mixinextras.MixinExtrasBootstrap::init"
+    ]
+  },
+
+  "mixins": [
+    "stackdeobfuscator.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.14.11",
+    "minecraft": ">=1.19.3",
+    "java": ">=17"
+  }
+}

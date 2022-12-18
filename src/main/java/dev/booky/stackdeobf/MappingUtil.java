@@ -2,6 +2,7 @@ package dev.booky.stackdeobf;
 // Created by booky10 in StackDeobfuscator (17:43 17.12.22)
 
 import com.google.common.base.Preconditions;
+import com.mojang.logging.LogUtils;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.mappingio.MappedElementKind;
 import net.fabricmc.mappingio.MappingReader;
@@ -10,6 +11,7 @@ import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.tree.MappingTree;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 import net.minecraft.SharedConstants;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.URI;
@@ -38,6 +40,7 @@ public class MappingUtil {
     private static final Path INTERMEDIARY_JAR_PATH = CACHE_DIR.resolve("intermediary_" + INTERMEDIARY_VERSION + ".jar");
     private static final Path INTERMEDIARY_PATH = CACHE_DIR.resolve("intermediary_" + INTERMEDIARY_VERSION + ".txt");
 
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final HttpClient HTTP = HttpClient.newHttpClient();
     private static final MemoryMappingTree MAPPINGS;
 
@@ -66,14 +69,12 @@ public class MappingUtil {
         try {
             MemoryMappingTree mojang = prepMojangMappings();
             MemoryMappingTree intermediary = prepIntermediaryMappings();
+
             MAPPINGS = mergeMojangIntermediary(intermediary, mojang);
+            LOGGER.info("Finished preparations, intermediary and mojang mappings have been merged");
         } catch (IOException exception) {
             throw new RuntimeException(exception);
         }
-
-//        mojang.accept(MappingWriter.create(CACHE_DIR.resolve("mojang.txt"), MappingFormat.TINY_2));
-//        intermediary.accept(MappingWriter.create(CACHE_DIR.resolve("intermediary.txt"), MappingFormat.TINY_2));
-//        merged.accept(MappingWriter.create(CACHE_DIR.resolve("merged.txt"), MappingFormat.TINY_2));
     }
 
     public static void mapThrowable(Throwable throwable) {
@@ -141,7 +142,9 @@ public class MappingUtil {
     private static void cacheOrGet(Path path, URI uri) {
         if (!Files.isRegularFile(path)) {
             try {
+                LOGGER.info("Downloading {} to {}...", uri, path);
                 HTTP.send(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofFile(path));
+                LOGGER.info("  Finished");
             } catch (IOException | InterruptedException exception) {
                 throw new RuntimeException(exception);
             }

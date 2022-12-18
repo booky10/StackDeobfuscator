@@ -10,18 +10,13 @@
   ],
 
   "license": "GPL-3.0",
-  "environment": "client",
-  "accessWidener": "stackdeobfuscator.accesswidener",
+  "environment": "*",
 
   "entrypoints": {
-    "preLaunch": [
-      "com.llamalad7.mixinextras.MixinExtrasBootstrap::init"
+    "main": [
+      "dev.booky.stackdeobf.StackDeobfMod"
     ]
   },
-
-  "mixins": [
-    "stackdeobfuscator.mixins.json"
-  ],
 
   "depends": {
     "fabricloader": ">=0.14.11",

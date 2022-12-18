@@ -32,10 +32,8 @@ dependencies {
 
     modImplementation("net.fabricmc:fabric-loader:0.14.11")
 
-    // Useful additions to mixin
-    val mixinExtrasVersion = "0.1.1"
-    include(implementation("com.github.LlamaLad7:MixinExtras:$mixinExtrasVersion")!!)
-    annotationProcessor("com.github.LlamaLad7:MixinExtras:$mixinExtrasVersion")
+    // mappings remapper
+    include(implementation("net.fabricmc:mapping-io:0.3.0")!!)
 }
 
 java {
@@ -68,8 +66,4 @@ tasks {
             rename { return@rename "${it}_stackdeobfuscator" }
         }
     }
-}
-
-loom {
-    accessWidenerPath.set(File(project.rootDir, "src/main/resources/stackdeobfuscator.accesswidener"))
 }

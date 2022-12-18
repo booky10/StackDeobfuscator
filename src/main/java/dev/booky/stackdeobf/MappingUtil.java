@@ -4,11 +4,10 @@ package dev.booky.stackdeobf;
 import com.google.common.base.Preconditions;
 import com.mojang.logging.LogUtils;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.mappingio.MappedElementKind;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.format.MappingFormat;
-import net.fabricmc.mappingio.tree.MappingTree;
+import net.fabricmc.mappingio.tree.MappingTree.ClassMapping;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 import net.minecraft.SharedConstants;
 import org.slf4j.Logger;
@@ -42,7 +41,8 @@ public class MappingUtil {
 
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final HttpClient HTTP = HttpClient.newHttpClient();
-    private static final MemoryMappingTree MAPPINGS;
+
+    private static final MemoryMappingTree INTERMEDIARY, MOJANG;
 
     static {
         if (Files.notExists(CACHE_DIR)) {
@@ -67,11 +67,9 @@ public class MappingUtil {
         }
 
         try {
-            MemoryMappingTree mojang = prepMojangMappings();
-            MemoryMappingTree intermediary = prepIntermediaryMappings();
-
-            MAPPINGS = mergeMojangIntermediary(intermediary, mojang);
-            LOGGER.info("Finished preparations, intermediary and mojang mappings have been merged");
+            INTERMEDIARY = parseIntermediaryMappings();
+            MOJANG = parseMojangMappings();
+            LOGGER.info("Parsed mojang and intermediary mappings, ready for remapping");
         } catch (IOException exception) {
             throw new RuntimeException(exception);
         }
@@ -94,34 +92,51 @@ public class MappingUtil {
     }
 
     public static StackTraceElement mapStackTraceElement(StackTraceElement element) {
-        String classLoaderName = element.getClassLoaderName();
-        String moduleName = element.getModuleName();
-        String moduleVersion = element.getModuleVersion();
-        String declaringClass = element.getClassName();
-        String methodName = element.getMethodName();
-        String fileName = element.getFileName();
-        int lineNumber = element.getLineNumber();
+        String classId = element.getClassName().replace('.', '/');
 
-        MappingTree.ClassMapping declaringClassMapping = MAPPINGS.getClass(declaringClass);
-        if (declaringClassMapping != null) {
-            declaringClass = declaringClassMapping.getDstName(0);
+        // we look up using intermediary mappings (used in fabric production) and
+        // using mojang mappings (some classes don't get obfuscated at all)
+        ClassMapping intermediaryClassMapping = INTERMEDIARY.getClass(classId, 0);
+        ClassMapping mojangClassMapping = MOJANG.getClass(classId, 0);
 
-            String originalMethodName = methodName;
-            Set<String> mappedMethodNames = declaringClassMapping.getMethods().stream()
-                    .filter(method -> originalMethodName.equals(method.getSrcName()))
-                    .map(method -> method.getDstName(0))
-                    .collect(Collectors.toUnmodifiableSet());
-
-            if (!mappedMethodNames.isEmpty()) {
-                methodName = String.join("/", mappedMethodNames);
-            }
+        // if the class is unknown to both, stop trying to do something
+        if (intermediaryClassMapping == null && mojangClassMapping == null) {
+            return element;
         }
 
-        return new StackTraceElement(classLoaderName, moduleName, moduleVersion,
-                declaringClass, methodName, fileName, lineNumber);
+        // look up by obfuscated naming
+        if (intermediaryClassMapping == null) {
+            intermediaryClassMapping = INTERMEDIARY.getClass(mojangClassMapping.getSrcName());
+        }
+        if (mojangClassMapping == null) {
+            mojangClassMapping = MOJANG.getClass(intermediaryClassMapping.getSrcName());
+        }
+
+        // some mappings are incomplete, cancel remapping
+        if (intermediaryClassMapping == null || mojangClassMapping == null) {
+            return element;
+        }
+
+        ClassMapping finalMojangClassMapping = mojangClassMapping;
+        Set<String> mappedMethodNames = intermediaryClassMapping.getMethods().stream()
+                // filtering with intermediary mappign name
+                .filter(method -> element.getMethodName().equals(method.getDstName(0)))
+                // mapping to mojang method mapping
+                .map(method -> finalMojangClassMapping.getMethod(method.getSrcName(), method.getSrcDesc()))
+                // mapping to mojang-mapped destination name
+                .map(method -> method.getDstName(0))
+                .collect(Collectors.toUnmodifiableSet());
+
+        String className = mojangClassMapping.getDstName(0).replace('/', '.');
+        String methodName = !mappedMethodNames.isEmpty()
+                ? String.join("/", mappedMethodNames)
+                : element.getMethodName();
+
+        return new StackTraceElement(element.getClassLoaderName(), element.getModuleName(), element.getModuleVersion(),
+                className, methodName, element.getFileName(), element.getLineNumber());
     }
 
-    private static MemoryMappingTree prepMojangMappings() throws IOException {
+    private static MemoryMappingTree parseMojangMappings() throws IOException {
         MemoryMappingTree moj2obf = new MemoryMappingTree();
         MappingReader.read(MOJANG_PATH, MappingFormat.PROGUARD, moj2obf);
 
@@ -133,7 +148,7 @@ public class MappingUtil {
         return obf2moj;
     }
 
-    private static MemoryMappingTree prepIntermediaryMappings() throws IOException {
+    private static MemoryMappingTree parseIntermediaryMappings() throws IOException {
         MemoryMappingTree obf2inter = new MemoryMappingTree();
         MappingReader.read(INTERMEDIARY_PATH, MappingFormat.TINY_2, obf2inter);
         return obf2inter;
@@ -149,75 +164,6 @@ public class MappingUtil {
                 throw new RuntimeException(exception);
             }
         }
-    }
-
-    private static MemoryMappingTree mergeMojangIntermediary(MemoryMappingTree intermediary, MemoryMappingTree mojang) throws IOException {
-        MemoryMappingTree mappings = new MemoryMappingTree();
-        mappings.visitNamespaces("intermediary", List.of("named"));
-
-        for (MappingTree.ClassMapping mojangClass : mojang.getClasses()) {
-            MappingTree.ClassMapping intermediaryClass = intermediary.getClass(mojangClass.getSrcName());
-            if (intermediaryClass == null) {
-                continue;
-            }
-
-            mappings.visitClass(intermediaryClass.getDstName(0));
-            for (MappingTree.FieldMapping mojangField : mojangClass.getFields()) {
-                MappingTree.FieldMapping intermediaryField = intermediaryClass.getField(mojangField.getSrcName(), mojangField.getSrcDesc());
-                if (intermediaryField == null) {
-                    continue;
-                }
-
-                mappings.visitField(intermediaryField.getDstName(0), intermediaryField.getDstDesc(0));
-                mappings.visitDstDesc(MappedElementKind.FIELD, 0, mojangField.getDstDesc(0));
-                mappings.visitDstName(MappedElementKind.FIELD, 0, mojangField.getDstName(0));
-                if (mojangField.getComment() != null) {
-                    mappings.visitComment(MappedElementKind.FIELD, mojangField.getComment());
-                }
-            }
-
-            for (MappingTree.MethodMapping mojangMethod : mojangClass.getMethods()) {
-                MappingTree.MethodMapping intermediaryMethod = intermediaryClass.getMethod(mojangMethod.getSrcName(), mojangMethod.getSrcDesc());
-                if (intermediaryMethod == null) {
-                    continue;
-                }
-
-                mappings.visitMethod(intermediaryMethod.getDstName(0), intermediaryMethod.getDstDesc(0));
-                for (MappingTree.MethodArgMapping mojangMethodArg : mojangMethod.getArgs()) {
-                    MappingTree.MethodArgMapping intermediaryMethodArg = intermediaryMethod.getArg(mojangMethodArg.getArgPosition(), mojangMethodArg.getLvIndex(), mojangMethodArg.getSrcName());
-                    mappings.visitMethodArg(intermediaryMethodArg.getArgPosition(), intermediaryMethodArg.getLvIndex(), intermediaryMethodArg.getDstName(0));
-
-                    mappings.visitDstName(MappedElementKind.METHOD_ARG, 0, mojangMethodArg.getDstName(0));
-                    if (mojangMethodArg.getComment() != null) {
-                        mappings.visitComment(MappedElementKind.METHOD_ARG, mojangMethodArg.getComment());
-                    }
-                }
-
-                for (MappingTree.MethodVarMapping mojangMethodVar : mojangMethod.getVars()) {
-                    MappingTree.MethodVarMapping intermediaryMethodVar = intermediaryMethod.getVar(mojangMethodVar.getLvtRowIndex(), mojangMethodVar.getLvIndex(), mojangMethodVar.getStartOpIdx(), mojangMethodVar.getSrcName());
-                    mappings.visitMethodVar(intermediaryMethodVar.getLvtRowIndex(), intermediaryMethodVar.getLvIndex(), intermediaryMethodVar.getStartOpIdx(), intermediaryMethodVar.getDstName(0));
-
-                    mappings.visitDstName(MappedElementKind.METHOD_VAR, 0, mojangMethodVar.getDstName(0));
-                    if (mojangMethodVar.getComment() != null) {
-                        mappings.visitComment(MappedElementKind.METHOD_VAR, mojangMethodVar.getComment());
-                    }
-                }
-
-                mappings.visitDstDesc(MappedElementKind.METHOD, 0, mojangMethod.getDstDesc(0));
-                mappings.visitDstName(MappedElementKind.METHOD, 0, mojangMethod.getDstName(0));
-                if (mojangMethod.getComment() != null) {
-                    mappings.visitComment(MappedElementKind.METHOD, mojangMethod.getComment());
-                }
-            }
-
-            mappings.visitDstName(MappedElementKind.CLASS, 0, mojangClass.getDstName(0));
-            if (mojangClass.getComment() != null) {
-                mappings.visitComment(MappedElementKind.CLASS, mojangClass.getComment());
-            }
-        }
-
-        mappings.visitEnd();
-        return mappings;
     }
 }
 

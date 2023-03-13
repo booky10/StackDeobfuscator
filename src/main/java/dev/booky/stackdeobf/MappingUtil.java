@@ -2,6 +2,9 @@ package dev.booky.stackdeobf;
 // Created by booky10 in StackDeobfuscator (17:43 17.12.22)
 
 import com.google.common.base.Preconditions;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.mappingio.MappingReader;
@@ -10,6 +13,7 @@ import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.tree.MappingTree.ClassMapping;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 import net.minecraft.SharedConstants;
+import net.minecraft.Util;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -28,19 +32,41 @@ import java.util.stream.Collectors;
 
 public class MappingUtil {
 
-    private static final String MAPPING_HASH = System.getProperty("stackdeobf.mapping-hash", "42366909cc612e76208d34bf1356f05a88e08a1d");
-    private static final URI MOJANG_URI = URI.create("https://piston-data.mojang.com/v1/objects/" + MAPPING_HASH + "/client.txt");
-
-    private static final String INTERMEDIARY_VERSION = SharedConstants.getCurrentVersion().getName();
-    private static final URI INTERMEDIARY_URI = URI.create("https://maven.fabricmc.net/net/fabricmc/intermediary/" + INTERMEDIARY_VERSION + "/intermediary-" + INTERMEDIARY_VERSION + "-v2.jar");
-
-    private static final Path CACHE_DIR = FabricLoader.getInstance().getGameDir().resolve("stackdeobf_mappings");
-    private static final Path MOJANG_PATH = CACHE_DIR.resolve("mojang_" + MAPPING_HASH + ".txt");
-    private static final Path INTERMEDIARY_JAR_PATH = CACHE_DIR.resolve("intermediary_" + INTERMEDIARY_VERSION + ".jar");
-    private static final Path INTERMEDIARY_PATH = CACHE_DIR.resolve("intermediary_" + INTERMEDIARY_VERSION + ".txt");
-
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final HttpClient HTTP = HttpClient.newHttpClient();
+    private static final Gson GSON = new Gson();
+
+    private static final String MC_VERSION = SharedConstants.getCurrentVersion().getId();
+    private static final URI MANIFEST_URI = URI.create(System.getProperty("stackdeobf.manifest-uri", "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"));
+
+    private static final URI MOJANG_URI = Util.make(() -> {
+        HttpResponse<String> manifestResp = HTTP.sendAsync(HttpRequest.newBuilder(MANIFEST_URI).build(), HttpResponse.BodyHandlers.ofString()).join();
+        JsonObject manifestObj = GSON.fromJson(manifestResp.body(), JsonObject.class);
+
+        for (JsonElement element : manifestObj.getAsJsonArray("versions")) {
+            JsonObject elementObj = element.getAsJsonObject();
+            if (!MC_VERSION.equals(elementObj.get("id").getAsString())) {
+                continue;
+            }
+
+            URI infoUri = URI.create(elementObj.get("url").getAsString());
+            HttpResponse<String> infoResp = HTTP.sendAsync(HttpRequest.newBuilder(infoUri).build(), HttpResponse.BodyHandlers.ofString()).join();
+            JsonObject infoObj = GSON.fromJson(infoResp.body(), JsonObject.class);
+
+            return URI.create(infoObj
+                    .getAsJsonObject("downloads")
+                    .getAsJsonObject("client_mappings")
+                    .get("url").getAsString());
+        }
+
+        throw new IllegalStateException("Invalid minecraft version: " + MC_VERSION);
+    });
+    private static final URI INTERMEDIARY_URI = URI.create("https://maven.fabricmc.net/net/fabricmc/intermediary/" + MC_VERSION + "/intermediary-" + MC_VERSION + "-v2.jar");
+
+    private static final Path CACHE_DIR = FabricLoader.getInstance().getGameDir().resolve("stackdeobf_mappings");
+    private static final Path MOJANG_PATH = CACHE_DIR.resolve("mojang_" + MC_VERSION + ".txt");
+    private static final Path INTERMEDIARY_JAR_PATH = CACHE_DIR.resolve("intermediary_" + MC_VERSION + ".jar");
+    private static final Path INTERMEDIARY_PATH = CACHE_DIR.resolve("intermediary_" + MC_VERSION + ".txt");
 
     private static final MemoryMappingTree INTERMEDIARY, MOJANG;
 
@@ -54,8 +80,8 @@ public class MappingUtil {
         }
         Preconditions.checkState(Files.isDirectory(CACHE_DIR), CACHE_DIR + " has to be a directory");
 
-        cacheOrGet(MOJANG_PATH, MOJANG_URI);
-        cacheOrGet(INTERMEDIARY_JAR_PATH, INTERMEDIARY_URI);
+        downloadIfMissing(MOJANG_PATH, MOJANG_URI);
+        downloadIfMissing(INTERMEDIARY_JAR_PATH, INTERMEDIARY_URI);
 
         if (Files.notExists(INTERMEDIARY_PATH)) {
             try (FileSystem jar = FileSystems.newFileSystem(INTERMEDIARY_JAR_PATH)) {
@@ -107,8 +133,7 @@ public class MappingUtil {
         // look up by obfuscated naming
         if (intermediaryClassMapping == null) {
             intermediaryClassMapping = INTERMEDIARY.getClass(mojangClassMapping.getSrcName());
-        }
-        if (mojangClassMapping == null) {
+        } else if (mojangClassMapping == null) {
             mojangClassMapping = MOJANG.getClass(intermediaryClassMapping.getSrcName());
         }
 
@@ -119,7 +144,7 @@ public class MappingUtil {
 
         ClassMapping finalMojangClassMapping = mojangClassMapping;
         Set<String> mappedMethodNames = intermediaryClassMapping.getMethods().stream()
-                // filtering with intermediary mappign name
+                // filtering with intermediary mapping name
                 .filter(method -> element.getMethodName().equals(method.getDstName(0)))
                 // mapping to mojang method mapping
                 .map(method -> finalMojangClassMapping.getMethod(method.getSrcName(), method.getSrcDesc()))
@@ -132,8 +157,16 @@ public class MappingUtil {
                 ? String.join("/", mappedMethodNames)
                 : element.getMethodName();
 
+        String fileName = element.getFileName();
+        if (fileName != null) {
+            String intermediaryName = intermediaryClassMapping.getDstName(0);
+            if (intermediaryName.contains(fileName)) {
+                fileName = mojangClassMapping.getDstName(0).replaceAll(".+/", "") + ".java";
+            }
+        }
+
         return new StackTraceElement(element.getClassLoaderName(), element.getModuleName(), element.getModuleVersion(),
-                className, methodName, element.getFileName(), element.getLineNumber());
+                className, methodName, fileName, element.getLineNumber());
     }
 
     private static MemoryMappingTree parseMojangMappings() throws IOException {
@@ -154,7 +187,7 @@ public class MappingUtil {
         return obf2inter;
     }
 
-    private static void cacheOrGet(Path path, URI uri) {
+    private static void downloadIfMissing(Path path, URI uri) {
         if (!Files.isRegularFile(path)) {
             try {
                 LOGGER.info("Downloading {} to {}...", uri, path);

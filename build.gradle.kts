@@ -1,7 +1,7 @@
 import java.io.ByteArrayOutputStream
 
 plugins {
-    id("fabric-loom") version "1.0-SNAPSHOT"
+    id("fabric-loom") version "1.1-SNAPSHOT"
     id("maven-publish")
 }
 
@@ -27,7 +27,7 @@ repositories {
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:1.19.3")
+    minecraft("com.mojang:minecraft:1.19.4-rc3")
     mappings(loom.officialMojangMappings())
 
     modImplementation("net.fabricmc:fabric-loader:0.14.11")

@@ -14,20 +14,11 @@ fun getGitCommit(): String {
     return stdout.toString().trim()
 }
 
-val archivesBaseName = "stackdeobfuscator"
-version = "1.0.0+fabric.${getGitCommit()}"
+version = "1.1.0+fabric.${getGitCommit()}"
 group = "dev.booky"
 
-repositories {
-    maven("https://jitpack.io/") {
-        content {
-            includeModule("com.github.LlamaLad7", "MixinExtras")
-        }
-    }
-}
-
 dependencies {
-    minecraft("com.mojang:minecraft:1.19.4-rc3")
+    minecraft("com.mojang:minecraft:1.19.4")
     mappings(loom.officialMojangMappings())
 
     modImplementation("net.fabricmc:fabric-loader:0.14.11")

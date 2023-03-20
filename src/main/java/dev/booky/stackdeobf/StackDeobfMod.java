@@ -1,7 +1,6 @@
 package dev.booky.stackdeobf;
 // Created by booky10 in StackDeobfuscator (17:38 18.12.22)
 
-import com.mojang.logging.LogUtils;
 import net.fabricmc.api.ModInitializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
@@ -38,7 +37,5 @@ public class StackDeobfMod implements ModInitializer {
                 return Result.NEUTRAL;
             }
         });
-
-        LogUtils.getLogger().warn("test exception: class_360, field_1301", new Exception());
     }
 }

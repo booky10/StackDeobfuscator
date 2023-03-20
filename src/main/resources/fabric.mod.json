@@ -18,6 +18,10 @@
     ]
   },
 
+  "mixins": [
+    "stackdeobf.mixins.json"
+  ],
+
   "depends": {
     "fabricloader": ">=0.14.11",
     "java": ">=17"

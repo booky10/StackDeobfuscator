@@ -1,23 +1,70 @@
 package dev.booky.stackdeobf;
 // Created by booky10 in StackDeobfuscator (17:43 17.12.22)
 
+import java.util.regex.Pattern;
+
 public final class RemappingUtil {
+
+    private static final Pattern CLASS_PATTERN = Pattern.compile("(net.minecraft.)?class_(\\d+)");
+    private static final Pattern METHOD_PATTERN = Pattern.compile("method_(\\d+)");
+    private static final Pattern FIELD_PATTERN = Pattern.compile("field_(\\d+)");
 
     private RemappingUtil() {
     }
 
-    public static void remapThrowable(Throwable throwable) {
+    public static String remapString(String string) {
+        if (string.contains("class_")) {
+            string = CLASS_PATTERN.matcher(string).replaceAll(result -> {
+                int classId = Integer.parseInt(result.group(2));
+                return CachedMappings.remapClass(classId);
+            });
+        }
+
+        if (string.contains("method_")) {
+            string = METHOD_PATTERN.matcher(string).replaceAll(result -> {
+                int methodId = Integer.parseInt(result.group(1));
+                return CachedMappings.remapMethod(methodId);
+            });
+        }
+
+        if (string.contains("field_")) {
+            string = FIELD_PATTERN.matcher(string).replaceAll(result -> {
+                int fieldId = Integer.parseInt(result.group(1));
+                return CachedMappings.remapField(fieldId);
+            });
+        }
+
+        return string;
+    }
+
+    public static Throwable remapThrowable(Throwable throwable) {
         StackTraceElement[] stackTrace = throwable.getStackTrace();
         remapStackTraceElements(stackTrace);
-        throwable.setStackTrace(stackTrace);
 
-        if (throwable.getCause() != null) {
-            remapThrowable(throwable.getCause());
+        Throwable cause = throwable.getCause();
+        if (cause != null) {
+            cause = remapThrowable(cause);
         }
 
+        String message = throwable.getMessage();
+        if (message != null) {
+            message = remapString(message);
+        }
+
+        String throwableName;
+        if (throwable instanceof RemappedThrowable) {
+            throwableName = ((RemappedThrowable) throwable).getClassName();
+        } else {
+            throwableName = throwable.getClass().getName();
+            throwableName = remapString(throwableName);
+        }
+
+        Throwable remapped = new RemappedThrowable(message, cause, throwableName);
+        remapped.setStackTrace(stackTrace);
         for (Throwable suppressed : throwable.getSuppressed()) {
-            remapThrowable(suppressed);
+            remapped.addSuppressed(remapThrowable(suppressed));
         }
+        return remapped;
     }
 
     public static void remapStackTraceElements(StackTraceElement[] elements) {
@@ -70,7 +117,7 @@ public final class RemappingUtil {
             }
         }
 
-        return new StackTraceElement(element.getClassLoaderName(), element.getModuleName(), element.getModuleVersion(),
+        return new StackTraceElement(null /*dropped on purpose*/, element.getModuleName(), element.getModuleVersion(),
                 className, methodName, rawFileName, element.getLineNumber());
     }
 }

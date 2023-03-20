@@ -9,7 +9,8 @@
     "booky10"
   ],
 
-  "license": "GPL-3.0",
+  "icon": "assets/stackdeobf/icon.png",
+  "license": "LGPL-3.0-only",
   "environment": "*",
 
   "entrypoints": {

@@ -7,13 +7,16 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.mappingio.MappedElementKind;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.tree.MappingTree.ClassMapping;
+import net.fabricmc.mappingio.tree.MappingTree.MethodMapping;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 import net.minecraft.SharedConstants;
 import net.minecraft.Util;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -25,10 +28,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class MappingUtil {
 
@@ -105,7 +105,7 @@ public class MappingUtil {
         LOGGER.info("Initialization done: " + MOJANG.getClasses().size() + " classes (mojang), " + INTERMEDIARY.getClasses().size() + " classes (intermediary)");
     }
 
-    public static void mapThrowable(Throwable throwable) {
+    public static void mapThrowable(Throwable throwable) throws IOException {
         throwable.setStackTrace(mapStackTraceElements(throwable.getStackTrace()));
 
         if (throwable.getCause() != null) {
@@ -117,60 +117,107 @@ public class MappingUtil {
         }
     }
 
-    public static StackTraceElement[] mapStackTraceElements(StackTraceElement[] elements) {
-        return Arrays.stream(elements).map(MappingUtil::mapStackTraceElement).toArray(StackTraceElement[]::new);
+    public static StackTraceElement[] mapStackTraceElements(StackTraceElement[] elements) throws IOException {
+        for (int i = 0; i < elements.length; i++) {
+            elements[i] = mapStackTraceElement(elements[i]);
+        }
+        return elements;
     }
 
-    public static StackTraceElement mapStackTraceElement(StackTraceElement element) {
-        String classId = element.getClassName().replace('.', '/');
-
-        // we look up using intermediary mappings (used in fabric production) and
-        // using mojang mappings (some classes don't get obfuscated at all)
-        ClassMapping intermediaryClassMapping = INTERMEDIARY.getClass(classId, 0);
-        ClassMapping mojangClassMapping = MOJANG.getClass(classId, 0);
-
-        // if the class is unknown to both, stop trying to do something
-        if (intermediaryClassMapping == null && mojangClassMapping == null) {
-            return element;
+    public static StackTraceElement mapStackTraceElement(StackTraceElement element) throws IOException {
+        // class name remapping
+        String className = element.getClassName();
+        ClassMapping mojangMapping = getClassMapping(className);
+        if (mojangMapping != null) {
+            className = getMappedName(mojangMapping, true);
         }
 
-        // look up by obfuscated naming
-        if (intermediaryClassMapping == null) {
-            intermediaryClassMapping = INTERMEDIARY.getClass(mojangClassMapping.getSrcName());
-        } else if (mojangClassMapping == null) {
-            mojangClassMapping = MOJANG.getClass(intermediaryClassMapping.getSrcName());
-        }
+        // method name remapping
+        String[] methodName = {element.getMethodName()};
+        // TODO find better solution
+        INTERMEDIARY.accept(new MappingVisitorAdapter() {
+            private String srcClassName;
+            private String srcMethodName;
+            private String srcMethodDesc;
 
-        // some mappings are incomplete, cancel remapping
-        if (intermediaryClassMapping == null || mojangClassMapping == null) {
-            return element;
-        }
+            @Override
+            public boolean visitClass(String srcName) throws IOException {
+                this.srcClassName = srcName;
+                return super.visitClass(srcName);
+            }
 
-        ClassMapping finalMojangClassMapping = mojangClassMapping;
-        Set<String> mappedMethodNames = intermediaryClassMapping.getMethods().stream()
-                // filtering with intermediary mapping name
-                .filter(method -> element.getMethodName().equals(method.getDstName(0)))
-                // mapping to mojang method mapping
-                .map(method -> finalMojangClassMapping.getMethod(method.getSrcName(), method.getSrcDesc()))
-                // mapping to mojang-mapped destination name
-                .map(method -> method.getDstName(0))
-                .collect(Collectors.toUnmodifiableSet());
+            @Override
+            public boolean visitMethod(String srcName, String srcDesc) throws IOException {
+                this.srcMethodName = srcName;
+                this.srcMethodDesc = srcDesc;
+                return super.visitMethod(srcName, srcDesc);
+            }
 
-        String className = mojangClassMapping.getDstName(0).replace('/', '.');
-        String methodName = !mappedMethodNames.isEmpty()
-                ? String.join("/", mappedMethodNames)
-                : element.getMethodName();
+            @Override
+            public void visitDstName(MappedElementKind targetKind, int namespace, String name) throws IOException {
+                if (targetKind == MappedElementKind.METHOD && name.equals(methodName[0])) {
+                    MethodMapping mapping = MOJANG.getMethod(this.srcClassName, this.srcMethodName, this.srcMethodDesc);
+                    methodName[0] = mapping.getDstName(0);
+                }
+                super.visitDstName(targetKind, namespace, name);
+            }
+        });
 
+        // file name remapping
         String fileName = element.getFileName();
         if (fileName != null) {
-            String intermediaryName = intermediaryClassMapping.getDstName(0);
-            if (intermediaryName.contains(fileName)) {
-                fileName = mojangClassMapping.getDstName(0).replaceAll(".+/", "") + ".java";
+            int fileTypeSeparator = fileName.indexOf('.');
+            String fileType = "";
+            if (fileTypeSeparator != -1) {
+                fileType = fileName.substring(fileTypeSeparator);
+                fileName = fileName.substring(0, fileTypeSeparator);
             }
+            fileName = mapClassName(fileName) + fileType;
         }
 
         return new StackTraceElement(element.getClassLoaderName(), element.getModuleName(), element.getModuleVersion(),
-                className, methodName, fileName, element.getLineNumber());
+                className, methodName[0], fileName, element.getLineNumber());
+    }
+
+    private static String normalizeClassName(String input) {
+        if (input.startsWith("net.minecraft.class_")) {
+            return input;
+        }
+
+        if (input.startsWith("class_")) {
+            return "net.minecraft." + input;
+        }
+
+        // doesn't seem to be an intermediary class name
+        return input;
+    }
+
+    private static String mapClassName(String input) {
+        ClassMapping mapping = getClassMapping(normalizeClassName(input));
+        return mapping == null ? input : getMappedName(mapping, input.startsWith("net.minecraft.class_"));
+    }
+
+    private static String getMappedName(ClassMapping mapping, boolean includePackage) {
+        String dstName = mapping.getDstName(0);
+        if (includePackage) {
+            return dstName.replace('/', '.');
+        }
+
+        int lastPackageSeparator = dstName.lastIndexOf('/');
+        if (lastPackageSeparator != -1) {
+            return dstName.substring(lastPackageSeparator + 1);
+        }
+        return dstName; // no package
+    }
+
+    private static @Nullable ClassMapping getClassMapping(String fqcn) {
+        ClassMapping intermediaryMapping = INTERMEDIARY.getClass(fqcn.replace('.', '/'), 0);
+        if (intermediaryMapping == null) {
+            return null; // class mapping can't be found in intermediary mappings
+        }
+
+        // can return null if there is no mapping for this class
+        return MOJANG.getClass(intermediaryMapping.getSrcName());
     }
 
     private static MemoryMappingTree parseMojangMappings() throws IOException {

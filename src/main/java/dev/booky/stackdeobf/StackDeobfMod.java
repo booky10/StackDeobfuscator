@@ -7,6 +7,8 @@ import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.filter.AbstractFilter;
 
+import java.io.IOException;
+
 public class StackDeobfMod implements ModInitializer {
 
     @Override
@@ -18,7 +20,11 @@ public class StackDeobfMod implements ModInitializer {
             @Override
             public Result filter(LogEvent event) {
                 if (event.getThrown() != null) {
-                    MappingUtil.mapThrowable(event.getThrown());
+                    try {
+                        MappingUtil.mapThrowable(event.getThrown());
+                    } catch (IOException exception) {
+                        event.getThrown().addSuppressed(exception);
+                    }
                 }
                 return Result.NEUTRAL;
             }

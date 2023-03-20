@@ -16,7 +16,7 @@ public class StackDeobfMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        MappingUtil.class.getName(); // initialize class
+        MappingUtil.init();
 
         // inspired by https://github.com/natanfudge/Not-Enough-Crashes/blob/613f6393a37ac7b987d71e8ad5dbd3f4588eb6c4/fabric/src/main/java/fudge/notenoughcrashes/fabric/DeobfuscatingRewritePolicy.java
         Logger rootLogger = (Logger) LogManager.getRootLogger();

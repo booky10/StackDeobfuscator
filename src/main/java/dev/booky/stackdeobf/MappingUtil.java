@@ -101,6 +101,10 @@ public class MappingUtil {
         }
     }
 
+    public static void init() {
+        LOGGER.info("Initialization done: " + MOJANG.getClasses().size() + " classes (mojang), " + INTERMEDIARY.getClasses().size() + " classes (intermediary)");
+    }
+
     public static void mapThrowable(Throwable throwable) {
         throwable.setStackTrace(mapStackTraceElements(throwable.getStackTrace()));
 

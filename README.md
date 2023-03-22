@@ -1,4 +1,4 @@
-## Stack Deobfuscator
+# Stack Deobfuscator
 
 **Note: By using this mod you agree to the license of mojang mappings:**
 
@@ -8,7 +8,15 @@ makes no warranties, express or implied, with respect to the mappings provided h
 document or the source code (in any form) of Minecraft: Java Edition is governed by the Minecraft End User License
 Agreement available at https://account.mojang.com/documents/minecraft_eula.
 
-### What does this mod do?
+## What does this mod do?
+
+### Before
+
+![intermediary_mapped_exception](./images/exception_showcase_intermediary.png)
+
+### After
+
+![mojang_mapped_exception](./images/exception_showcase_mojang.png)
 
 All throwables logged using the log4j root logger will be remapped from intermediary mappings to mojang mappings.
 This allows mod developers to more easily spot issues in a non-development environment as the errors are instantly
@@ -16,12 +24,12 @@ human-readable.
 
 **Note:** This mod downloads mojang and intermediary mappings once on startup.
 
-### Compatibility
+## Compatibility
 
 This mod only injects at a few places for crash reports to be remapped and only uses one vanilla method for getting the
 current minecraft version, so this mod should be compatible with most (future) minecraft versions.
 
-### Building
+## Building
 
 ```shell
 ./gradlew build # remove "./" on windows

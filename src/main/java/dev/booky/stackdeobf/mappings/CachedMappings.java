@@ -21,16 +21,16 @@ public final class CachedMappings {
     private CachedMappings() {
     }
 
-    public static void init(AbstractMappingType.Type type) {
-        LOGGER.info("Caching {}...", type.getName());
+    public static void init(AbstractMappingType type) {
+        LOGGER.info("Caching {} mappings...", type.getName());
         try {
             // visitor expects mappings to be intermediary -> named
-            type.create().cacheMappings(new MappingCacheVisitor(CLASSES, METHODS, FIELDS));
+            type.cacheMappings(new MappingCacheVisitor(CLASSES, METHODS, FIELDS));
         } catch (IOException exception) {
             throw new RuntimeException(exception);
         }
 
-        LOGGER.info("Finished caching {}:", type.getName());
+        LOGGER.info("Finished caching {} mappings:", type.getName());
         LOGGER.info("  Classes: " + CLASSES.size());
         LOGGER.info("  Methods: " + METHODS.size());
         LOGGER.info("  Fields: " + FIELDS.size());

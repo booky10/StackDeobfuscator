@@ -22,6 +22,12 @@ public abstract class AbstractMappingType {
     protected static final HttpClient HTTP = HttpClient.newHttpClient();
     private static final Logger LOGGER = LogUtils.getLogger();
 
+    private final String name;
+
+    protected AbstractMappingType(String name) {
+        this.name = name;
+    }
+
     public void cacheMappings(MappingVisitor visitor) throws IOException {
         Path cacheDir = FabricLoader.getInstance().getGameDir().resolve("stackdeobf_mappings");
         if (Files.notExists(cacheDir)) {
@@ -34,6 +40,10 @@ public abstract class AbstractMappingType {
         this.visitMappings(visitor);
     }
 
+    public String getName() {
+        return this.name;
+    }
+
     protected abstract void downloadMappings(Path cacheDir) throws IOException;
 
     protected abstract void parseMappings(Path cacheDir) throws IOException;
@@ -44,33 +54,5 @@ public abstract class AbstractMappingType {
         LOGGER.info("Downloading {} to {}...", uri, path);
         HTTP.sendAsync(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofFile(path)).join();
         LOGGER.info("  Finished");
-    }
-
-    public enum Type {
-
-        MOJANG("mojang mappings") {
-            @Override
-            public AbstractMappingType create() {
-                return new MojangMappingType();
-            }
-        },
-        YARN("yarn mappings") {
-            @Override
-            public AbstractMappingType create() {
-                return new YarnMappingType();
-            }
-        };
-
-        private final String name;
-
-        Type(String name) {
-            this.name = name;
-        }
-
-        public abstract AbstractMappingType create();
-
-        public String getName() {
-            return this.name;
-        }
     }
 }

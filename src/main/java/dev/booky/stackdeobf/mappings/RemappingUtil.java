@@ -1,9 +1,10 @@
 package dev.booky.stackdeobf.mappings;
 // Created by booky10 in StackDeobfuscator (17:43 17.12.22)
 
+import com.mojang.logging.LogUtils;
 import org.apache.logging.log4j.core.LogEvent;
-import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.filter.AbstractFilter;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -15,11 +16,13 @@ public final class RemappingUtil {
     private static final Pattern CLASS_PATTERN = Pattern.compile("(net.minecraft.)?class_(\\d+)");
     private static final Pattern METHOD_PATTERN = Pattern.compile("method_(\\d+)");
     private static final Pattern FIELD_PATTERN = Pattern.compile("field_(\\d+)");
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     private RemappingUtil() {
     }
 
-    public static void injectLogFilter(Logger logger) {
+    public static void injectLogFilter(org.apache.logging.log4j.core.Logger logger) {
+        LOGGER.info("Injecting into root logger...");
         logger.addFilter(new AbstractFilter() {
             @Override
             public Result filter(LogEvent event) {

@@ -30,7 +30,8 @@ public class MojangMappingType extends AbstractMappingType {
     private Path mojangPath, intermediaryPath;
     private MemoryMappingTree mojang, intermediary;
 
-    MojangMappingType() {
+    public MojangMappingType() {
+        super("mojang");
     }
 
     @Override

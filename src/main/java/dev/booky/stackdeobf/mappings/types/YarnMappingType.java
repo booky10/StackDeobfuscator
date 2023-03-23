@@ -26,7 +26,8 @@ public class YarnMappingType extends AbstractMappingType {
     private Path yarnPath;
     private MemoryMappingTree yarn;
 
-    YarnMappingType() {
+    public YarnMappingType() {
+        super("yarn");
     }
 
     @Override

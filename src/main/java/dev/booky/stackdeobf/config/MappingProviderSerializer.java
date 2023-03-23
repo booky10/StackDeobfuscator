@@ -9,59 +9,59 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import dev.booky.stackdeobf.mappings.types.AbstractMappingType;
-import dev.booky.stackdeobf.mappings.types.CustomMappingType;
-import dev.booky.stackdeobf.mappings.types.MojangMappingType;
-import dev.booky.stackdeobf.mappings.types.QuiltMappingType;
-import dev.booky.stackdeobf.mappings.types.YarnMappingType;
+import dev.booky.stackdeobf.mappings.providers.AbstractMappingProvider;
+import dev.booky.stackdeobf.mappings.providers.CustomMappingProvider;
+import dev.booky.stackdeobf.mappings.providers.MojangMappingProvider;
+import dev.booky.stackdeobf.mappings.providers.QuiltMappingProvider;
+import dev.booky.stackdeobf.mappings.providers.YarnMappingProvider;
 import net.fabricmc.mappingio.format.MappingFormat;
 
 import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.util.Locale;
 
-public class MappingTypeSerializer implements JsonSerializer<AbstractMappingType>, JsonDeserializer<AbstractMappingType> {
+public class MappingProviderSerializer implements JsonSerializer<AbstractMappingProvider>, JsonDeserializer<AbstractMappingProvider> {
 
-    public static final MappingTypeSerializer INSTANCE = new MappingTypeSerializer();
+    public static final MappingProviderSerializer INSTANCE = new MappingProviderSerializer();
 
-    private MappingTypeSerializer() {
+    private MappingProviderSerializer() {
     }
 
     @Override
-    public AbstractMappingType deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext ctx) throws JsonParseException {
+    public AbstractMappingProvider deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext ctx) throws JsonParseException {
         if (json.isJsonObject()) {
             JsonObject obj = json.getAsJsonObject();
             Path path = Path.of(obj.get("path").getAsString());
             MappingFormat format = ctx.deserialize(obj.get("mapping-format"), MappingFormat.class);
-            return new CustomMappingType(path, format);
+            return new CustomMappingProvider(path, format);
         }
 
         String id = json.getAsString().trim().toLowerCase(Locale.ROOT);
         return switch (id) {
-            case "mojang" -> new MojangMappingType();
-            case "yarn" -> new YarnMappingType();
-            case "quilt" -> new QuiltMappingType();
+            case "mojang" -> new MojangMappingProvider();
+            case "yarn" -> new YarnMappingProvider();
+            case "quilt" -> new QuiltMappingProvider();
             default -> throw new JsonParseException("Invalid mappings id: " + id);
         };
     }
 
     @Override
-    public JsonElement serialize(AbstractMappingType src, Type typeOfSrc, JsonSerializationContext context) {
-        if (src instanceof MojangMappingType) {
+    public JsonElement serialize(AbstractMappingProvider src, Type typeOfSrc, JsonSerializationContext context) {
+        if (src instanceof MojangMappingProvider) {
             return new JsonPrimitive("mojang");
         }
-        if (src instanceof YarnMappingType) {
+        if (src instanceof YarnMappingProvider) {
             return new JsonPrimitive("yarn");
         }
-        if (src instanceof QuiltMappingType) {
+        if (src instanceof QuiltMappingProvider) {
             return new JsonPrimitive("quilt");
         }
-        if (src instanceof CustomMappingType custom) {
+        if (src instanceof CustomMappingProvider custom) {
             JsonObject obj = new JsonObject();
             obj.addProperty("path", custom.getPath().toString());
             obj.addProperty("mapping-format", custom.getFormat().name());
             return obj;
         }
-        throw new UnsupportedOperationException("Unsupported mapping type: " + src.getName());
+        throw new UnsupportedOperationException("Unsupported mapping provider: " + src.getName());
     }
 }

@@ -17,7 +17,7 @@ public class StackDeobfMod implements ModInitializer {
     @Override
     public void onInitialize() {
         StackDeobfConfig config = this.loadConfig();
-        CachedMappings.init(config.getMappingType());
+        CachedMappings.init(config.getMappingProvider());
 
         if (config.hasLogInjectEnabled()) {
             RemappingUtil.injectLogFilter((Logger) LogManager.getRootLogger());

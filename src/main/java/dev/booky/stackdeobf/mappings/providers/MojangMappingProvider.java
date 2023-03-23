@@ -1,4 +1,4 @@
-package dev.booky.stackdeobf.mappings.types;
+package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (16:57 23.03.23)
 
 import com.google.gson.Gson;
@@ -25,12 +25,12 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 
-public class MojangMappingType extends AbstractMappingType {
+public class MojangMappingProvider extends AbstractMappingProvider {
 
     private Path mojangPath, intermediaryPath;
     private MemoryMappingTree mojang, intermediary;
 
-    public MojangMappingType() {
+    public MojangMappingProvider() {
         super("mojang");
     }
 

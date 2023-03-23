@@ -1,4 +1,4 @@
-package dev.booky.stackdeobf.mappings.types;
+package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (17:42 23.03.23)
 
 import net.fabricmc.mappingio.MappingReader;
@@ -15,13 +15,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CustomMappingType extends AbstractMappingType {
+public class CustomMappingProvider extends AbstractMappingProvider {
 
     private final Path path;
     private final MappingFormat format;
     private MemoryMappingTree mappings;
 
-    public CustomMappingType(Path path, MappingFormat format) {
+    public CustomMappingProvider(Path path, MappingFormat format) {
         super("custom");
         this.path = path;
         this.format = format;

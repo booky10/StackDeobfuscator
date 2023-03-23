@@ -1,4 +1,4 @@
-package dev.booky.stackdeobf.mappings.types;
+package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (22:08 23.03.23)
 
 import net.fabricmc.mappingio.MappingReader;
@@ -21,7 +21,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class PackagedMappingType extends AbstractMappingType {
+public class PackagedMappingProvider extends AbstractMappingProvider {
 
     protected final URI metaUri;
     protected final String mappingUri;
@@ -29,7 +29,7 @@ public class PackagedMappingType extends AbstractMappingType {
     protected Path path;
     protected MemoryMappingTree mappings;
 
-    public PackagedMappingType(String name, String repo, String groupId, String artifactId, String classifier) {
+    public PackagedMappingProvider(String name, String repo, String groupId, String artifactId, String classifier) {
         super(name);
 
         groupId = groupId.replace('.', '/');

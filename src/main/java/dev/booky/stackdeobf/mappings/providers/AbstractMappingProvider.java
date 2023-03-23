@@ -1,4 +1,4 @@
-package dev.booky.stackdeobf.mappings.types;
+package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (14:35 23.03.23)
 
 import com.google.common.base.Preconditions;
@@ -16,7 +16,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public abstract class AbstractMappingType {
+public abstract class AbstractMappingProvider {
 
     protected static final String MC_VERSION = SharedConstants.getCurrentVersion().getId();
     protected static final HttpClient HTTP = HttpClient.newHttpClient();
@@ -24,7 +24,7 @@ public abstract class AbstractMappingType {
 
     protected final String name;
 
-    protected AbstractMappingType(String name) {
+    protected AbstractMappingProvider(String name) {
         this.name = name;
     }
 

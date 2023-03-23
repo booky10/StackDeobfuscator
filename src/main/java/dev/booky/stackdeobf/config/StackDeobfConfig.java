@@ -4,8 +4,8 @@ package dev.booky.stackdeobf.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
-import dev.booky.stackdeobf.mappings.types.AbstractMappingType;
-import dev.booky.stackdeobf.mappings.types.YarnMappingType;
+import dev.booky.stackdeobf.mappings.providers.AbstractMappingProvider;
+import dev.booky.stackdeobf.mappings.providers.YarnMappingProvider;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -17,14 +17,14 @@ public final class StackDeobfConfig {
 
     private static final Gson GSON = new GsonBuilder()
             .disableHtmlEscaping().setPrettyPrinting()
-            .registerTypeAdapter(AbstractMappingType.class, MappingTypeSerializer.INSTANCE)
+            .registerTypeAdapter(AbstractMappingProvider.class, MappingProviderSerializer.INSTANCE)
             .create();
 
     @SerializedName("inject-logger")
     private boolean logInject;
 
     @SerializedName("mapping-type")
-    private AbstractMappingType mappingType;
+    private AbstractMappingProvider mappingProvider;
 
     private StackDeobfConfig() {
     }
@@ -39,7 +39,7 @@ public final class StackDeobfConfig {
         // save default config
         StackDeobfConfig config = new StackDeobfConfig();
         config.logInject = true;
-        config.mappingType = new YarnMappingType();
+        config.mappingProvider = new YarnMappingProvider();
 
         try (BufferedWriter writer = Files.newBufferedWriter(configPath)) {
             GSON.toJson(config, writer);
@@ -51,7 +51,7 @@ public final class StackDeobfConfig {
         return this.logInject;
     }
 
-    public AbstractMappingType getMappingType() {
-        return this.mappingType;
+    public AbstractMappingProvider getMappingProvider() {
+        return this.mappingProvider;
     }
 }

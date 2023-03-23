@@ -2,7 +2,7 @@ package dev.booky.stackdeobf.mappings;
 // Created by booky10 in StackDeobfuscator (17:04 20.03.23)
 
 import com.mojang.logging.LogUtils;
-import dev.booky.stackdeobf.mappings.types.AbstractMappingType;
+import dev.booky.stackdeobf.mappings.providers.AbstractMappingProvider;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.jetbrains.annotations.Nullable;
@@ -21,16 +21,16 @@ public final class CachedMappings {
     private CachedMappings() {
     }
 
-    public static void init(AbstractMappingType type) {
-        LOGGER.info("Caching {} mappings...", type.getName());
+    public static void init(AbstractMappingProvider provider) {
+        LOGGER.info("Caching {} mappings...", provider.getName());
         try {
             // visitor expects mappings to be intermediary -> named
-            type.cacheMappings(new MappingCacheVisitor(CLASSES, METHODS, FIELDS));
+            provider.cacheMappings(new MappingCacheVisitor(CLASSES, METHODS, FIELDS));
         } catch (IOException exception) {
             throw new RuntimeException(exception);
         }
 
-        LOGGER.info("Finished caching {} mappings:", type.getName());
+        LOGGER.info("Finished caching {} mappings:", provider.getName());
         LOGGER.info("  Classes: " + CLASSES.size());
         LOGGER.info("  Methods: " + METHODS.size());
         LOGGER.info("  Fields: " + FIELDS.size());

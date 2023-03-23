@@ -89,7 +89,7 @@ public class MojangMappingType extends AbstractMappingType {
     }
 
     @Override
-    protected void parseMappings(Path cacheDir) throws IOException {
+    protected void parseMappings() throws IOException {
         // the production mappings need to be mapped back to their
         // obfuscated form, because mojang mappings are obfuscated -> named,
         // without the intermediary mappings inbetween

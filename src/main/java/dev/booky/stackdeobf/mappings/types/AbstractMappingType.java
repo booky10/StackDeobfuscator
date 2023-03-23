@@ -36,7 +36,7 @@ public abstract class AbstractMappingType {
         Preconditions.checkState(Files.isDirectory(cacheDir), cacheDir + " has to be a directory");
 
         this.downloadMappings(cacheDir);
-        this.parseMappings(cacheDir);
+        this.parseMappings();
         this.visitMappings(visitor);
     }
 
@@ -46,7 +46,7 @@ public abstract class AbstractMappingType {
 
     protected abstract void downloadMappings(Path cacheDir) throws IOException;
 
-    protected abstract void parseMappings(Path cacheDir) throws IOException;
+    protected abstract void parseMappings() throws IOException;
 
     protected abstract void visitMappings(MappingVisitor visitor) throws IOException;
 

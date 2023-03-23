@@ -78,7 +78,7 @@ public class YarnMappingType extends AbstractMappingType {
     }
 
     @Override
-    protected void parseMappings(Path cacheDir) throws IOException {
+    protected void parseMappings() throws IOException {
         MemoryMappingTree inter2named = new MemoryMappingTree();
         MappingReader.read(this.yarnPath, MappingFormat.TINY_2, inter2named);
         this.yarn = inter2named;

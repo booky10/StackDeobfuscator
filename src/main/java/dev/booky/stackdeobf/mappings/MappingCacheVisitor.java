@@ -58,11 +58,25 @@ public class MappingCacheVisitor implements MappingVisitor {
         switch (targetKind) {
             case CLASS -> {
                 if (this.srcClassName.startsWith("net/minecraft/class_")) {
-                    try {
-                        int classId = Integer.parseInt(this.srcClassName.substring("net/minecraft/class_".length()));
-                        this.classes.put(classId, name.replace('/', '.'));
-                    } catch (NumberFormatException ignored) {
+                    String classIdStr;
+                    int innerClassSeparatorIndex = this.srcClassName.lastIndexOf('$');
+                    if (innerClassSeparatorIndex != -1) {
+                        classIdStr = this.srcClassName.substring(innerClassSeparatorIndex + 1);
+                        if (!classIdStr.startsWith("class_")) {
+                            return; // don't save it if it is a lambda
+                        }
+                        classIdStr = classIdStr.substring("class_".length());
+                    } else {
+                        classIdStr = this.srcClassName.substring("net/minecraft/class_".length());
                     }
+
+                    innerClassSeparatorIndex = name.indexOf('$');
+                    if (innerClassSeparatorIndex != -1) {
+                        name = name.substring(innerClassSeparatorIndex + 1);
+                    } else {
+                        name = name.replace('/', '.');
+                    }
+                    this.classes.put(Integer.parseInt(classIdStr), name);
                 }
             }
             case METHOD -> {

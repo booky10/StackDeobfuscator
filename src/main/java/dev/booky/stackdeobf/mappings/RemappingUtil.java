@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 
 public final class RemappingUtil {
 
-    private static final Pattern CLASS_PATTERN = Pattern.compile("(net.minecraft.)?class_(\\d+)");
+    static final Pattern CLASS_PATTERN = Pattern.compile("(net\\.minecraft\\.)?class_(\\d+)");
     private static final Pattern METHOD_PATTERN = Pattern.compile("method_(\\d+)");
     private static final Pattern FIELD_PATTERN = Pattern.compile("field_(\\d+)");
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -50,49 +50,65 @@ public final class RemappingUtil {
         });
     }
 
+    private static String remapClasses(String string) {
+        return CLASS_PATTERN.matcher(string).replaceAll(result -> {
+            int classId = Integer.parseInt(result.group(2));
+            String className = CachedMappings.remapClass(classId);
+            if (className == null) {
+                return result.group();
+            }
+
+            if (result.group(1) != null) {
+                // a package has been specified, don't remove it
+                return className;
+            }
+
+            // no package in original string, remove it
+            int packageIndex = className.lastIndexOf('.');
+            if (packageIndex != -1) {
+                className = className.substring(packageIndex + 1);
+            }
+            return className;
+        });
+    }
+
+    private static String remapMethods(String string) {
+        return METHOD_PATTERN.matcher(string).replaceAll(result -> {
+            int methodId = Integer.parseInt(result.group(1));
+            String methodName = CachedMappings.remapMethod(methodId);
+            return methodName == null ? result.group() : methodName;
+        });
+    }
+
+    private static String remapFields(String string) {
+        return FIELD_PATTERN.matcher(string).replaceAll(result -> {
+            int fieldId = Integer.parseInt(result.group(1));
+            String fieldName = CachedMappings.remapField(fieldId);
+            return fieldName == null ? result.group() : fieldName;
+        });
+    }
+
     public static String remapString(String string) {
         if (string.contains("class_")) {
-            string = CLASS_PATTERN.matcher(string).replaceAll(result -> {
-                int classId = Integer.parseInt(result.group(2));
-                String className = CachedMappings.remapClass(classId);
-                if (className == null) {
-                    return result.group();
-                }
-
-                if (result.group(1) != null) {
-                    // a package has been specified, don't remove it
-                    return className;
-                }
-
-                // no package in original string, remove it
-                int packageIndex = className.lastIndexOf('.');
-                if (packageIndex != -1) {
-                    className = className.substring(packageIndex + 1);
-                }
-                return className;
-            });
+            string = remapClasses(string);
         }
 
         if (string.contains("method_")) {
-            string = METHOD_PATTERN.matcher(string).replaceAll(result -> {
-                int methodId = Integer.parseInt(result.group(1));
-                String methodName = CachedMappings.remapMethod(methodId);
-                return methodName == null ? result.group() : methodName;
-            });
+            string = remapMethods(string);
         }
 
         if (string.contains("field_")) {
-            string = FIELD_PATTERN.matcher(string).replaceAll(result -> {
-                int fieldId = Integer.parseInt(result.group(1));
-                String fieldName = CachedMappings.remapField(fieldId);
-                return fieldName == null ? result.group() : fieldName;
-            });
+            string = remapFields(string);
         }
 
         return string;
     }
 
     public static Throwable remapThrowable(Throwable throwable) {
+        if (throwable instanceof RemappedThrowable) {
+            return throwable;
+        }
+
         StackTraceElement[] stackTrace = throwable.getStackTrace();
         remapStackTraceElements(stackTrace);
 
@@ -106,12 +122,9 @@ public final class RemappingUtil {
             message = remapString(message);
         }
 
-        String throwableName;
-        if (throwable instanceof RemappedThrowable) {
-            throwableName = ((RemappedThrowable) throwable).getClassName();
-        } else {
-            throwableName = throwable.getClass().getName();
-            throwableName = remapString(throwableName);
+        String throwableName = throwable.getClass().getName();
+        if (throwableName.startsWith("net.minecraft.class_")) {
+            throwableName = remapClasses(throwableName);
         }
 
         Throwable remapped = new RemappedThrowable(message, cause, throwableName);
@@ -129,51 +142,23 @@ public final class RemappingUtil {
     }
 
     public static StackTraceElement remapStackTraceElement(StackTraceElement element) {
-        // class name remapping
         String className = element.getClassName();
-        if (className.startsWith("net.minecraft.class_")) { // intermediary name
-            int classId = Integer.parseInt(className.substring("net.minecraft.class_".length()));
-            String remappedClassName = CachedMappings.remapClass(classId);
-            if (remappedClassName != null) {
-                className = remappedClassName;
-            }
+        if (className.startsWith("net.minecraft.class_")) {
+            className = remapClasses(className);
         }
 
-        // method name remapping
+        String fileName = element.getFileName();
+        if (fileName != null && fileName.startsWith("class_")) {
+            fileName = remapClasses(fileName);
+        }
+
         String methodName = element.getMethodName();
-        if (methodName.startsWith("method_")) { // intermediary name
-            int methodId = Integer.parseInt(methodName.substring("method_".length()));
-            String remappedMethodName = CachedMappings.remapMethod(methodId);
-            if (remappedMethodName != null) {
-                methodName = remappedMethodName;
-            }
-        }
-
-        // file name remapping
-        String rawFileName = element.getFileName();
-        if (rawFileName != null && rawFileName.startsWith("class_")) { // intermediary name
-            int fileTypeSeparator = rawFileName.indexOf('.');
-            String fileType = "", fileName;
-            if (fileTypeSeparator != -1) {
-                fileType = rawFileName.substring(fileTypeSeparator);
-                fileName = rawFileName.substring(0, fileTypeSeparator);
-            } else {
-                fileName = rawFileName;
-            }
-
-            int classId = Integer.parseInt(fileName.substring("class_".length()));
-            String remappedClassName = CachedMappings.remapClass(classId);
-            if (remappedClassName != null) {
-                int lastPackageIndex = remappedClassName.lastIndexOf('.');
-                if (lastPackageIndex != -1) {
-                    remappedClassName = remappedClassName.substring(lastPackageIndex + 1);
-                }
-                rawFileName = remappedClassName + fileType;
-            }
+        if (methodName.startsWith("method_")) {
+            methodName = remapMethods(methodName);
         }
 
         return new StackTraceElement(null /*dropped on purpose*/, element.getModuleName(), element.getModuleVersion(),
-                className, methodName, rawFileName, element.getLineNumber());
+                className, methodName, fileName, element.getLineNumber());
     }
 }
 

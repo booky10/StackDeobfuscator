@@ -1,6 +1,13 @@
-package dev.booky.stackdeobf;
+package dev.booky.stackdeobf.mappings;
 // Created by booky10 in StackDeobfuscator (17:43 17.12.22)
 
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.filter.AbstractFilter;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.regex.Pattern;
 
 public final class RemappingUtil {
@@ -12,25 +19,70 @@ public final class RemappingUtil {
     private RemappingUtil() {
     }
 
+    public static void injectLogFilter(Logger logger) {
+        logger.addFilter(new AbstractFilter() {
+            @Override
+            public Result filter(LogEvent event) {
+                if (event.getThrown() == null) {
+                    return Result.NEUTRAL;
+                }
+
+                // we need to manually print out the stacktrace, because
+                // log4j also builds it manually, resulting
+                // in every logged exception being a "RemappedThrowable"
+                try (StringWriter strWriter = new StringWriter()) {
+                    try (PrintWriter writer = new PrintWriter(strWriter)) {
+                        RemappingUtil.remapThrowable(event.getThrown()).printStackTrace(writer);
+                    }
+
+                    logger.logIfEnabled(event.getLoggerFqcn(), event.getLevel(), event.getMarker(), event.getMessage(), null);
+                    logger.logIfEnabled(event.getLoggerFqcn(), event.getLevel(), event.getMarker(), strWriter.toString());
+                } catch (IOException exception) {
+                    throw new RuntimeException(exception);
+                }
+
+                // cancel the underlying log event
+                return Result.DENY;
+            }
+        });
+    }
+
     public static String remapString(String string) {
         if (string.contains("class_")) {
             string = CLASS_PATTERN.matcher(string).replaceAll(result -> {
                 int classId = Integer.parseInt(result.group(2));
-                return CachedMappings.remapClass(classId);
+                String className = CachedMappings.remapClass(classId);
+                if (className == null) {
+                    return result.group();
+                }
+
+                if (result.group(1) != null) {
+                    // a package has been specified, don't remove it
+                    return className;
+                }
+
+                // no package in original string, remove it
+                int packageIndex = className.lastIndexOf('.');
+                if (packageIndex != -1) {
+                    className = className.substring(packageIndex + 1);
+                }
+                return className;
             });
         }
 
         if (string.contains("method_")) {
             string = METHOD_PATTERN.matcher(string).replaceAll(result -> {
                 int methodId = Integer.parseInt(result.group(1));
-                return CachedMappings.remapMethod(methodId);
+                String methodName = CachedMappings.remapMethod(methodId);
+                return methodName == null ? result.group() : methodName;
             });
         }
 
         if (string.contains("field_")) {
             string = FIELD_PATTERN.matcher(string).replaceAll(result -> {
                 int fieldId = Integer.parseInt(result.group(1));
-                return CachedMappings.remapField(fieldId);
+                String fieldName = CachedMappings.remapField(fieldId);
+                return fieldName == null ? result.group() : fieldName;
             });
         }
 

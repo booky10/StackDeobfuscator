@@ -1,7 +1,7 @@
 package dev.booky.stackdeobf.mixin;
 // Created by booky10 in StackDeobfuscator (18:35 20.03.23)
 
-import dev.booky.stackdeobf.RemappingUtil;
+import dev.booky.stackdeobf.mappings.RemappingUtil;
 import net.minecraft.CrashReport;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;

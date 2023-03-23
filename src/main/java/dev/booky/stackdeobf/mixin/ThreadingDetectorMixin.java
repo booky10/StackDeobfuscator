@@ -1,7 +1,7 @@
 package dev.booky.stackdeobf.mixin;
 // Created by booky10 in StackDeobfuscator (18:50 20.03.23)
 
-import dev.booky.stackdeobf.RemappingUtil;
+import dev.booky.stackdeobf.mappings.RemappingUtil;
 import net.minecraft.util.ThreadingDetector;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

@@ -1,4 +1,4 @@
-package dev.booky.stackdeobf;
+package dev.booky.stackdeobf.mappings;
 // Created by booky10 in StackDeobfuscator (18:03 20.03.23)
 
 class RemappedThrowable extends Throwable {

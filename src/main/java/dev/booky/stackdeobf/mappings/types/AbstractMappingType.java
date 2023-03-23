@@ -22,7 +22,7 @@ public abstract class AbstractMappingType {
     protected static final HttpClient HTTP = HttpClient.newHttpClient();
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private final String name;
+    protected final String name;
 
     protected AbstractMappingType(String name) {
         this.name = name;

@@ -12,6 +12,7 @@ import com.google.gson.JsonSerializer;
 import dev.booky.stackdeobf.mappings.types.AbstractMappingType;
 import dev.booky.stackdeobf.mappings.types.CustomMappingType;
 import dev.booky.stackdeobf.mappings.types.MojangMappingType;
+import dev.booky.stackdeobf.mappings.types.QuiltMappingType;
 import dev.booky.stackdeobf.mappings.types.YarnMappingType;
 import net.fabricmc.mappingio.format.MappingFormat;
 
@@ -39,6 +40,7 @@ public class MappingTypeSerializer implements JsonSerializer<AbstractMappingType
         return switch (id) {
             case "mojang" -> new MojangMappingType();
             case "yarn" -> new YarnMappingType();
+            case "quilt" -> new QuiltMappingType();
             default -> throw new JsonParseException("Invalid mappings id: " + id);
         };
     }
@@ -50,6 +52,9 @@ public class MappingTypeSerializer implements JsonSerializer<AbstractMappingType
         }
         if (src instanceof YarnMappingType) {
             return new JsonPrimitive("yarn");
+        }
+        if (src instanceof QuiltMappingType) {
+            return new JsonPrimitive("quilt");
         }
         if (src instanceof CustomMappingType custom) {
             JsonObject obj = new JsonObject();

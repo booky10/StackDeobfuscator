@@ -1,12 +1,13 @@
 package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (22:08 23.03.23)
 
-import dev.booky.stackdeobf.StackDeobfMod;
+import dev.booky.stackdeobf.compat.CompatUtil;
 import dev.booky.stackdeobf.http.HttpUtil;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
 import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
+import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -44,20 +45,27 @@ public class PackagedMappingProvider extends AbstractMappingProvider {
 
     @Override
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
-        return this.fetchLatestVersion(MC_VERSION, executor)
+        // after 1.14.2, fabric switched to using the version id instead of the name for yarn versions
+        String version = CompatUtil.WORLD_VERSION >= 1963 ? CompatUtil.VERSION_ID : CompatUtil.VERSION_NAME;
+
+        // versions somewhere before mojang mappings (I don't have decompiled mc versions
+        // before mojang mappings) include the current commit hash in the version.json name
+        version = StringUtils.split(version, ' ')[0];
+
+        return this.fetchLatestVersion(version, executor)
                 .thenCompose(build -> {
                     this.path = cacheDir.resolve(this.name + "_" + build + ".txt");
 
                     // already cached, don't download anything
                     if (Files.exists(this.path)) {
-                        StackDeobfMod.LOGGER.info("Mappings for {} build {} are already downloaded", this.name, build);
+                        CompatUtil.LOGGER.info("Mappings for {} build {} are already downloaded", this.name, build);
                         return CompletableFuture.completedFuture(null);
                     }
 
                     Path jarPath = cacheDir.resolve(this.name + "_" + build + ".jar");
                     URI uri = URI.create(this.mappingUri.replace("$VER", build));
 
-                    StackDeobfMod.LOGGER.info("Downloading {} mappings jar for build {}...", this.name, build);
+                    CompatUtil.LOGGER.info("Downloading {} mappings jar for build {}...", this.name, build);
                     return HttpUtil.getAsync(uri, executor).thenAccept(mappingJarBytes -> {
                         try {
                             Files.write(jarPath, mappingJarBytes);
@@ -84,7 +92,7 @@ public class PackagedMappingProvider extends AbstractMappingProvider {
     }
 
     private CompletableFuture<String> fetchLatestVersion(String mcVersion, Executor executor) {
-        StackDeobfMod.LOGGER.info("Fetching latest {} build for {}...", this.name, mcVersion);
+        CompatUtil.LOGGER.info("Fetching latest {} build for {}...", this.name, mcVersion);
         return HttpUtil.getAsync(this.metaUri, executor).thenApply(resp -> {
             try (InputStream input = new ByteArrayInputStream(resp)) {
                 Document document;
@@ -99,7 +107,9 @@ public class PackagedMappingProvider extends AbstractMappingProvider {
                 NodeList versions = document.getElementsByTagName("version");
                 for (int i = versions.getLength() - 1; i >= 0; i--) {
                     String version = versions.item(i).getTextContent();
-                    if (version.startsWith(mcVersion + "+")) {
+                    if (version.startsWith(mcVersion + "+")
+                            // 19w14b and before have this formatting
+                            || version.startsWith(mcVersion + ".")) {
                         return version;
                     }
                 }

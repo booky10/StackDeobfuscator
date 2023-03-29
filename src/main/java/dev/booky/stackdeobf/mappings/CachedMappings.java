@@ -2,7 +2,7 @@ package dev.booky.stackdeobf.mappings;
 // Created by booky10 in StackDeobfuscator (17:04 20.03.23)
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import dev.booky.stackdeobf.StackDeobfMod;
+import dev.booky.stackdeobf.compat.CompatUtil;
 import dev.booky.stackdeobf.mappings.providers.AbstractMappingProvider;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
@@ -23,7 +23,7 @@ public final class CachedMappings {
     }
 
     public static void init(AbstractMappingProvider provider) {
-        StackDeobfMod.LOGGER.info("Creating asynchronous mapping cache executor...");
+        CompatUtil.LOGGER.info("Creating asynchronous mapping cache executor...");
         ExecutorService cacheExecutor = Executors.newSingleThreadExecutor(
                 new ThreadFactoryBuilder().setNameFormat("Mappings Cache Thread").setDaemon(true).build());
         long start = System.currentTimeMillis();
@@ -32,16 +32,16 @@ public final class CachedMappings {
         provider.cacheMappings(new MappingCacheVisitor(CLASSES, METHODS, FIELDS), cacheExecutor)
                 .thenAccept($ -> {
                     long timeDiff = System.currentTimeMillis() - start;
-                    StackDeobfMod.LOGGER.info("Cached mappings have been built (took {}ms)", timeDiff);
+                    CompatUtil.LOGGER.info("Cached mappings have been built (took {}ms)", timeDiff);
 
-                    StackDeobfMod.LOGGER.info("  Classes: " + CLASSES.size());
-                    StackDeobfMod.LOGGER.info("  Methods: " + METHODS.size());
-                    StackDeobfMod.LOGGER.info("  Fields: " + FIELDS.size());
+                    CompatUtil.LOGGER.info("  Classes: " + CLASSES.size());
+                    CompatUtil.LOGGER.info("  Methods: " + METHODS.size());
+                    CompatUtil.LOGGER.info("  Fields: " + FIELDS.size());
                 })
                 // needs to be executed asynchronously, otherwise the
                 // executor of the current thread would be shut down
                 .thenRunAsync(() -> {
-                    StackDeobfMod.LOGGER.info("Shutting down asynchronous mapping cache executor...");
+                    CompatUtil.LOGGER.info("Shutting down asynchronous mapping cache executor...");
                     cacheExecutor.shutdown();
                 });
     }

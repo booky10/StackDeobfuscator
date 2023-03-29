@@ -1,8 +1,10 @@
 package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (16:57 23.03.23)
 
+import com.google.common.base.Preconditions;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dev.booky.stackdeobf.compat.CompatUtil;
 import dev.booky.stackdeobf.http.HttpUtil;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
@@ -37,17 +39,18 @@ public class MojangMappingProvider extends AbstractMappingProvider {
 
     public MojangMappingProvider() {
         super("mojang");
+        Preconditions.checkState(CompatUtil.WORLD_VERSION >= 2203, "Mojang mappings are only provided by mojang starting from 19w36a");
     }
 
     @Override
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
-        this.mojangPath = cacheDir.resolve("mojang_" + MC_VERSION + ".txt");
+        this.mojangPath = cacheDir.resolve("mojang_" + CompatUtil.VERSION_ID + ".txt");
 
         // only create futures if no mappings are locally cached
         List<CompletableFuture<?>> futures = new ArrayList<>(2);
 
         if (Files.notExists(this.mojangPath)) {
-            futures.add(this.fetchMojangMappingsUri(executor)
+            futures.add(this.fetchMojangMappingsUri(CompatUtil.VERSION_ID, executor)
                     .thenCompose(uri -> HttpUtil.getAsync(uri, executor))
                     .thenAccept(mappingBytes -> {
                         try {
@@ -59,11 +62,11 @@ public class MojangMappingProvider extends AbstractMappingProvider {
         }
 
         // see comment in "parseMappings" method for why intermediary mappings are needed
-        this.intermediaryPath = cacheDir.resolve("intermediary_" + MC_VERSION + ".txt");
+        this.intermediaryPath = cacheDir.resolve("intermediary_" + CompatUtil.VERSION_ID + ".txt");
         if (Files.notExists(this.intermediaryPath)) {
-            Path intermediaryJarPath = cacheDir.resolve("intermediary_" + MC_VERSION + ".jar");
+            Path intermediaryJarPath = cacheDir.resolve("intermediary_" + CompatUtil.VERSION_ID + ".jar");
             URI intermediaryUri = URI.create("https://maven.fabricmc.net/net/fabricmc/intermediary/" +
-                    MC_VERSION + "/intermediary-" + MC_VERSION + "-v2.jar");
+                    CompatUtil.VERSION_ID + "/intermediary-" + CompatUtil.VERSION_ID + "-v2.jar");
 
             futures.add(HttpUtil.getAsync(intermediaryUri, executor).thenAccept(intermediaryJarBytes -> {
                 try {
@@ -92,7 +95,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
         return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
     }
 
-    private CompletableFuture<URI> fetchMojangMappingsUri(Executor executor) {
+    private CompletableFuture<URI> fetchMojangMappingsUri(String mcVersion, Executor executor) {
         URI manifestUri = URI.create(System.getProperty("stackdeobf.manifest-uri", "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"));
         return HttpUtil.getAsync(manifestUri, executor).thenCompose(manifestResp -> {
             JsonObject manifestObj;
@@ -105,7 +108,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
 
             for (JsonElement element : manifestObj.getAsJsonArray("versions")) {
                 JsonObject elementObj = element.getAsJsonObject();
-                if (!MC_VERSION.equals(elementObj.get("id").getAsString())) {
+                if (!mcVersion.equals(elementObj.get("id").getAsString())) {
                     continue;
                 }
 
@@ -129,7 +132,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
                 });
             }
 
-            throw new IllegalStateException("Invalid minecraft version: " + MC_VERSION + " (not found in mojang version manifest)");
+            throw new IllegalStateException("Invalid minecraft version: " + mcVersion + " (not found in mojang version manifest)");
         });
     }
 

@@ -1,7 +1,7 @@
 package dev.booky.stackdeobf.http;
 // Created by booky10 in StackDeobfuscator (18:10 29.03.23)
 
-import dev.booky.stackdeobf.StackDeobfMod;
+import dev.booky.stackdeobf.compat.CompatUtil;
 import org.apache.commons.io.FileUtils;
 
 import java.net.URI;
@@ -43,7 +43,7 @@ public final class HttpUtil {
         HttpRequest request = HttpRequest.newBuilder(uri).build();
         HttpResponse.BodyHandler<byte[]> handler = HttpResponse.BodyHandlers.ofByteArray();
 
-        StackDeobfMod.LOGGER.info("Requesting {}...", uri);
+        CompatUtil.LOGGER.info("Requesting {}...", uri);
         long start = System.currentTimeMillis();
 
         return getHttpClient(executor).sendAsync(request, handler).thenApplyAsync(resp -> {
@@ -55,11 +55,11 @@ public final class HttpUtil {
                     resp.statusCode(), uri, timeDiff};
 
             if (!isSuccess(resp.statusCode())) {
-                StackDeobfMod.LOGGER.error(message, args);
+                CompatUtil.LOGGER.error(message, args);
                 throw new FailedHttpRequestException(resp);
             }
 
-            StackDeobfMod.LOGGER.info(message, args);
+            CompatUtil.LOGGER.info(message, args);
             return bodyBytes;
         }, executor);
     }

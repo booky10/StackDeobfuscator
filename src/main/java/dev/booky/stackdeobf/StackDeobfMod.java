@@ -1,7 +1,6 @@
 package dev.booky.stackdeobf;
 // Created by booky10 in StackDeobfuscator (17:38 18.12.22)
 
-import com.mojang.logging.LogUtils;
 import dev.booky.stackdeobf.config.StackDeobfConfig;
 import dev.booky.stackdeobf.mappings.CachedMappings;
 import dev.booky.stackdeobf.mappings.RemappingUtil;
@@ -14,8 +13,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 public class StackDeobfMod implements ModInitializer {
-
-    public static final org.slf4j.Logger LOGGER = LogUtils.getLogger();
 
     @Override
     public void onInitialize() {

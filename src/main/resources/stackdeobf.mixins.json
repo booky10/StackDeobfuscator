@@ -3,6 +3,7 @@
   "minVersion": "0.8",
   "package": "dev.booky.stackdeobf.mixin",
   "compatibilityLevel": "JAVA_17",
+  "plugin": "dev.booky.stackdeobf.mixin.StackDeobfMixinPlugin",
   "mixins": [
     "CrashReportCategoryMixin",
     "CrashReportMixin",

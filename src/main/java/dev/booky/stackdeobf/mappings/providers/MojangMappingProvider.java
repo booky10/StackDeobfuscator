@@ -1,9 +1,9 @@
 package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (16:57 23.03.23)
 
-import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dev.booky.stackdeobf.http.HttpUtil;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.mappingio.MappingReader;
@@ -13,17 +13,22 @@ import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.tree.MappingTree;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
+import net.minecraft.util.GsonHelper;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URI;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 public class MojangMappingProvider extends AbstractMappingProvider {
 
@@ -35,67 +40,114 @@ public class MojangMappingProvider extends AbstractMappingProvider {
     }
 
     @Override
-    protected void downloadMappings(Path cacheDir) throws IOException {
+    protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
         this.mojangPath = cacheDir.resolve("mojang_" + MC_VERSION + ".txt");
+
+        // only create futures if no mappings are locally cached
+        List<CompletableFuture<?>> futures = new ArrayList<>(2);
+
         if (Files.notExists(this.mojangPath)) {
-            URI mojangUri = this.fetchMojangMappingsUri();
-            this.download(mojangUri, this.mojangPath);
+            futures.add(this.fetchMojangMappingsUri(executor)
+                    .thenCompose(uri -> HttpUtil.getAsync(uri, executor))
+                    .thenAccept(mappingBytes -> {
+                        try {
+                            Files.write(this.mojangPath, mappingBytes);
+                        } catch (IOException exception) {
+                            throw new RuntimeException(exception);
+                        }
+                    }));
         }
 
-        // see comment in parseMappings(Path) for why intermediary mappings are needed
+        // see comment in "parseMappings" method for why intermediary mappings are needed
         this.intermediaryPath = cacheDir.resolve("intermediary_" + MC_VERSION + ".txt");
         if (Files.notExists(this.intermediaryPath)) {
             Path intermediaryJarPath = cacheDir.resolve("intermediary_" + MC_VERSION + ".jar");
-            if (Files.notExists(intermediaryJarPath)) {
-                URI intermediaryUri = URI.create("https://maven.fabricmc.net/net/fabricmc/intermediary/" + MC_VERSION + "/intermediary-" + MC_VERSION + "-v2.jar");
-                this.download(intermediaryUri, intermediaryJarPath);
-            }
+            URI intermediaryUri = URI.create("https://maven.fabricmc.net/net/fabricmc/intermediary/" +
+                    MC_VERSION + "/intermediary-" + MC_VERSION + "-v2.jar");
 
-            // intermediary mappings are inside a jar file, they need to be extracted
-            try (FileSystem jar = FileSystems.newFileSystem(intermediaryJarPath)) {
-                Path mappingsPath = jar.getPath("mappings/mappings.tiny");
-                Files.copy(mappingsPath, this.intermediaryPath);
-            }
+            futures.add(HttpUtil.getAsync(intermediaryUri, executor).thenAccept(intermediaryJarBytes -> {
+                try {
+                    Files.write(intermediaryJarPath, intermediaryJarBytes);
+                } catch (IOException exception) {
+                    throw new RuntimeException(exception);
+                }
+
+                // extract the mappings file from the mappings jar
+                try (FileSystem jar = FileSystems.newFileSystem(intermediaryJarPath)) {
+                    Path mappingsPath = jar.getPath("mappings/mappings.tiny");
+                    Files.copy(mappingsPath, this.intermediaryPath);
+                } catch (IOException exception) {
+                    throw new RuntimeException(exception);
+                }
+
+                // delete the jar, it is not needed anymore
+                try {
+                    Files.delete(intermediaryJarPath);
+                } catch (IOException exception) {
+                    throw new RuntimeException(exception);
+                }
+            }));
         }
+
+        return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
     }
 
-    private URI fetchMojangMappingsUri() {
+    private CompletableFuture<URI> fetchMojangMappingsUri(Executor executor) {
         URI manifestUri = URI.create(System.getProperty("stackdeobf.manifest-uri", "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"));
-
-        Gson gson = new Gson();
-        HttpResponse<String> manifestResp = HTTP.sendAsync(HttpRequest.newBuilder(manifestUri).build(), HttpResponse.BodyHandlers.ofString()).join();
-        JsonObject manifestObj = gson.fromJson(manifestResp.body(), JsonObject.class);
-
-        for (JsonElement element : manifestObj.getAsJsonArray("versions")) {
-            JsonObject elementObj = element.getAsJsonObject();
-            if (!MC_VERSION.equals(elementObj.get("id").getAsString())) {
-                continue;
+        return HttpUtil.getAsync(manifestUri, executor).thenCompose(manifestResp -> {
+            JsonObject manifestObj;
+            try (ByteArrayInputStream input = new ByteArrayInputStream(manifestResp);
+                 Reader reader = new InputStreamReader(input)) {
+                manifestObj = GsonHelper.parse(reader);
+            } catch (IOException exception) {
+                throw new RuntimeException(exception);
             }
 
-            URI infoUri = URI.create(elementObj.get("url").getAsString());
-            HttpResponse<String> infoResp = HTTP.sendAsync(HttpRequest.newBuilder(infoUri).build(), HttpResponse.BodyHandlers.ofString()).join();
-            JsonObject infoObj = gson.fromJson(infoResp.body(), JsonObject.class);
+            for (JsonElement element : manifestObj.getAsJsonArray("versions")) {
+                JsonObject elementObj = element.getAsJsonObject();
+                if (!MC_VERSION.equals(elementObj.get("id").getAsString())) {
+                    continue;
+                }
 
-            EnvType env = FabricLoader.getInstance().getEnvironmentType();
-            String envName = env.name().toLowerCase(Locale.ROOT);
+                URI infoUri = URI.create(elementObj.get("url").getAsString());
+                return HttpUtil.getAsync(infoUri, executor).thenApply(infoResp -> {
+                    JsonObject infoObj;
+                    try (ByteArrayInputStream input = new ByteArrayInputStream(infoResp);
+                         Reader reader = new InputStreamReader(input)) {
+                        infoObj = GsonHelper.parse(reader);
+                    } catch (IOException exception) {
+                        throw new RuntimeException(exception);
+                    }
 
-            return URI.create(infoObj
-                    .getAsJsonObject("downloads")
-                    .getAsJsonObject(envName + "_mappings")
-                    .get("url").getAsString());
-        }
+                    EnvType env = FabricLoader.getInstance().getEnvironmentType();
+                    String envName = env.name().toLowerCase(Locale.ROOT);
 
-        throw new IllegalStateException("Invalid minecraft version: " + MC_VERSION + " (not found in mojang version manifest)");
+                    return URI.create(infoObj
+                            .getAsJsonObject("downloads")
+                            .getAsJsonObject(envName + "_mappings")
+                            .get("url").getAsString());
+                });
+            }
+
+            throw new IllegalStateException("Invalid minecraft version: " + MC_VERSION + " (not found in mojang version manifest)");
+        });
     }
 
     @Override
-    protected void parseMappings() throws IOException {
-        // the production mappings need to be mapped back to their
-        // obfuscated form, because mojang mappings are obfuscated -> named,
-        // without the intermediary mappings inbetween
+    protected CompletableFuture<Void> parseMappings0(Executor executor) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                // the production mappings need to be mapped back to their
+                // obfuscated form, because mojang mappings are obfuscated -> named,
+                // without the intermediary mappings inbetween
 
-        this.mojang = this.parseMojangMappings();
-        this.intermediary = this.parseIntermediaryMappings();
+                this.mojang = this.parseMojangMappings();
+                this.intermediary = this.parseIntermediaryMappings();
+            } catch (IOException exception) {
+                throw new RuntimeException(exception);
+            }
+            return null;
+        }, executor);
     }
 
     private MemoryMappingTree parseMojangMappings() throws IOException {
@@ -117,38 +169,52 @@ public class MojangMappingProvider extends AbstractMappingProvider {
     }
 
     @Override
-    protected void visitMappings(MappingVisitor visitor) throws IOException {
-        // the source names need to be mapped to intermediary, because
-        // the specified visitor expects to receive intermediary source names
-        this.mojang.accept(new ForwardingMappingVisitor(visitor) {
-            private MappingTree.ClassMapping clazz;
-
-            @Override
-            public boolean visitClass(String srcName) throws IOException {
-                this.clazz = intermediary.getClass(srcName);
-                if (this.clazz != null) {
-                    return super.visitClass(this.clazz.getDstName(0));
-                }
-                return false;
+    protected CompletableFuture<Void> visitMappings0(MappingVisitor visitor, Executor executor) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                // the source names need to be mapped to intermediary, because
+                // the specified visitor expects to receive intermediary source names
+                this.mojang.accept(new Visitor(visitor));
+            } catch (IOException exception) {
+                throw new RuntimeException(exception);
             }
+            return null;
+        }, executor);
+    }
 
-            @Override
-            public boolean visitMethod(String srcName, String srcDesc) throws IOException {
-                MappingTree.MethodMapping mapping = this.clazz.getMethod(srcName, srcDesc);
-                if (mapping != null) {
-                    return super.visitMethod(mapping.getDstName(0), mapping.getDstDesc(0));
-                }
-                return false;
-            }
+    private final class Visitor extends ForwardingMappingVisitor {
 
-            @Override
-            public boolean visitField(String srcName, String srcDesc) throws IOException {
-                MappingTree.FieldMapping mapping = this.clazz.getField(srcName, srcDesc);
-                if (mapping != null) {
-                    return super.visitField(mapping.getDstName(0), mapping.getDstDesc(0));
-                }
-                return false;
+        private MappingTree.ClassMapping clazz;
+
+        private Visitor(MappingVisitor next) {
+            super(next);
+        }
+
+        @Override
+        public boolean visitClass(String srcName) throws IOException {
+            this.clazz = MojangMappingProvider.this.intermediary.getClass(srcName);
+            if (this.clazz != null) {
+                return super.visitClass(this.clazz.getDstName(0));
             }
-        });
+            return false;
+        }
+
+        @Override
+        public boolean visitMethod(String srcName, String srcDesc) throws IOException {
+            MappingTree.MethodMapping mapping = this.clazz.getMethod(srcName, srcDesc);
+            if (mapping != null) {
+                return super.visitMethod(mapping.getDstName(0), mapping.getDstDesc(0));
+            }
+            return false;
+        }
+
+        @Override
+        public boolean visitField(String srcName, String srcDesc) throws IOException {
+            MappingTree.FieldMapping mapping = this.clazz.getField(srcName, srcDesc);
+            if (mapping != null) {
+                return super.visitField(mapping.getDstName(0), mapping.getDstDesc(0));
+            }
+            return false;
+        }
     }
 }

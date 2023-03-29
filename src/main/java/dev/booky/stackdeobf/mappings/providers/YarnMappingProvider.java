@@ -4,6 +4,7 @@ package dev.booky.stackdeobf.mappings.providers;
 public class YarnMappingProvider extends PackagedMappingProvider {
 
     public YarnMappingProvider() {
-        super("yarn", "https://maven.fabricmc.net", "net.fabricmc", "yarn", "v2");
+        super("yarn", "https://maven.fabricmc.net",
+                "net.fabricmc", "yarn", "v2");
     }
 }

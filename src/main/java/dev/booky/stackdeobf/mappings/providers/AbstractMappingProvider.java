@@ -2,57 +2,85 @@ package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (14:35 23.03.23)
 
 import com.google.common.base.Preconditions;
-import com.mojang.logging.LogUtils;
+import dev.booky.stackdeobf.StackDeobfMod;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.mappingio.MappingVisitor;
 import net.minecraft.SharedConstants;
-import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 public abstract class AbstractMappingProvider {
 
     protected static final String MC_VERSION = SharedConstants.getCurrentVersion().getId();
-    protected static final HttpClient HTTP = HttpClient.newHttpClient();
-    private static final Logger LOGGER = LogUtils.getLogger();
-
     protected final String name;
 
     protected AbstractMappingProvider(String name) {
         this.name = name;
     }
 
-    public void cacheMappings(MappingVisitor visitor) throws IOException {
-        Path cacheDir = FabricLoader.getInstance().getGameDir().resolve("stackdeobf_mappings");
-        if (Files.notExists(cacheDir)) {
-            Files.createDirectories(cacheDir);
-        }
-        Preconditions.checkState(Files.isDirectory(cacheDir), cacheDir + " has to be a directory");
+    public CompletableFuture<Void> cacheMappings(MappingVisitor visitor, Executor executor) {
+        Path cacheDir = getCacheDir();
 
-        this.downloadMappings(cacheDir);
-        this.parseMappings();
-        this.visitMappings(visitor);
+        return CompletableFuture.completedFuture(null)
+                .thenComposeAsync($ -> this.downloadMappings(cacheDir, executor), executor)
+                .thenCompose($ -> this.parseMappings(executor))
+                .thenCompose($ -> this.visitMappings(visitor, executor));
     }
+
+    private static Path getCacheDir() {
+        Path cacheDir;
+        if (System.getProperties().containsKey("stackdeobf.mappings-cache-dir")) {
+            cacheDir = Path.of(System.getProperty("stackdeobf.mappings-cache-dir"));
+        } else {
+            cacheDir = FabricLoader.getInstance().getGameDir().resolve("stackdeobf_mappings");
+        }
+
+        if (Files.notExists(cacheDir)) {
+            try {
+                Files.createDirectories(cacheDir);
+            } catch (IOException exception) {
+                throw new RuntimeException(exception);
+            }
+        }
+
+        Preconditions.checkState(Files.isDirectory(cacheDir), cacheDir + " has to be a directory");
+        return cacheDir;
+    }
+
+    private CompletableFuture<Long> trackTime(CompletableFuture<Void> future) {
+        long start = System.currentTimeMillis();
+        return future.thenApply($ -> System.currentTimeMillis() - start);
+    }
+
+    private CompletableFuture<Void> downloadMappings(Path cacheDir, Executor executor) {
+        StackDeobfMod.LOGGER.info("Verifying cache of {} mappings...", this.name);
+        return this.trackTime(this.downloadMappings0(cacheDir, executor)).thenAccept(timeDiff ->
+                StackDeobfMod.LOGGER.info("Verified cache of {} mappings (took {}ms)", this.name, timeDiff));
+    }
+
+    private CompletableFuture<Void> parseMappings(Executor executor) {
+        StackDeobfMod.LOGGER.info("Parsing {} mappings...", this.name);
+        return this.trackTime(this.parseMappings0(executor)).thenAccept(timeDiff ->
+                StackDeobfMod.LOGGER.info("Parsed {} mappings (took {}ms)", this.name, timeDiff));
+    }
+
+    private CompletableFuture<Void> visitMappings(MappingVisitor visitor, Executor executor) {
+        StackDeobfMod.LOGGER.info("Caching {} mappings...", this.name);
+        return this.trackTime(this.visitMappings0(visitor, executor)).thenAccept(timeDiff ->
+                StackDeobfMod.LOGGER.info("Cached {} mappings (took {}ms)", this.name, timeDiff));
+    }
+
+    protected abstract CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor);
+
+    protected abstract CompletableFuture<Void> parseMappings0(Executor executor);
+
+    protected abstract CompletableFuture<Void> visitMappings0(MappingVisitor visitor, Executor executor);
 
     public String getName() {
         return this.name;
-    }
-
-    protected abstract void downloadMappings(Path cacheDir) throws IOException;
-
-    protected abstract void parseMappings() throws IOException;
-
-    protected abstract void visitMappings(MappingVisitor visitor) throws IOException;
-
-    protected void download(URI uri, Path path) {
-        LOGGER.info("Downloading {} to {}...", uri, path);
-        HTTP.sendAsync(HttpRequest.newBuilder(uri).build(), HttpResponse.BodyHandlers.ofFile(path)).join();
-        LOGGER.info("  Finished");
     }
 }

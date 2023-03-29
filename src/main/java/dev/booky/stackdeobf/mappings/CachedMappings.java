@@ -1,39 +1,49 @@
 package dev.booky.stackdeobf.mappings;
 // Created by booky10 in StackDeobfuscator (17:04 20.03.23)
 
-import com.mojang.logging.LogUtils;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import dev.booky.stackdeobf.StackDeobfMod;
 import dev.booky.stackdeobf.mappings.providers.AbstractMappingProvider;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
 
-import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public final class CachedMappings {
 
-    private static final Logger LOGGER = LogUtils.getLogger();
-
-    private static final Int2ObjectMap<String> CLASSES = new Int2ObjectOpenHashMap<>(); // includes package
-    private static final Int2ObjectMap<String> METHODS = new Int2ObjectOpenHashMap<>();
-    private static final Int2ObjectMap<String> FIELDS = new Int2ObjectOpenHashMap<>();
+    // "CLASSES" name has package prefixed (separated by '.')
+    private static final Int2ObjectMap<String> CLASSES = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
+    private static final Int2ObjectMap<String> METHODS = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
+    private static final Int2ObjectMap<String> FIELDS = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
 
     private CachedMappings() {
     }
 
     public static void init(AbstractMappingProvider provider) {
-        LOGGER.info("Caching {} mappings...", provider.getName());
-        try {
-            // visitor expects mappings to be intermediary -> named
-            provider.cacheMappings(new MappingCacheVisitor(CLASSES, METHODS, FIELDS));
-        } catch (IOException exception) {
-            throw new RuntimeException(exception);
-        }
+        StackDeobfMod.LOGGER.info("Creating asynchronous mapping cache executor...");
+        ExecutorService cacheExecutor = Executors.newSingleThreadExecutor(
+                new ThreadFactoryBuilder().setNameFormat("Mappings Cache Thread").setDaemon(true).build());
+        long start = System.currentTimeMillis();
 
-        LOGGER.info("Finished caching {} mappings:", provider.getName());
-        LOGGER.info("  Classes: " + CLASSES.size());
-        LOGGER.info("  Methods: " + METHODS.size());
-        LOGGER.info("  Fields: " + FIELDS.size());
+        // visitor expects mappings to be intermediary -> named
+        provider.cacheMappings(new MappingCacheVisitor(CLASSES, METHODS, FIELDS), cacheExecutor)
+                .thenAccept($ -> {
+                    long timeDiff = System.currentTimeMillis() - start;
+                    StackDeobfMod.LOGGER.info("Cached mappings have been built (took {}ms)", timeDiff);
+
+                    StackDeobfMod.LOGGER.info("  Classes: " + CLASSES.size());
+                    StackDeobfMod.LOGGER.info("  Methods: " + METHODS.size());
+                    StackDeobfMod.LOGGER.info("  Fields: " + FIELDS.size());
+                })
+                // needs to be executed asynchronously, otherwise the
+                // executor of the current thread would be shut down
+                .thenRunAsync(() -> {
+                    StackDeobfMod.LOGGER.info("Shutting down asynchronous mapping cache executor...");
+                    cacheExecutor.shutdown();
+                });
     }
 
     public static @Nullable String remapClass(int id) {

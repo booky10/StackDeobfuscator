@@ -92,11 +92,11 @@ human-readable.
 Mappings are downloaded and parsed asynchronously. They are downloaded only once per version.
 Yarn and Quilt refresh their version every 48 hours to check for updates.
 
-| Mappings | Compatible Minecraft Versions               | Download Size (zipped¹)²               | Cached Size (gzipped)²  |
-|----------|---------------------------------------------|----------------------------------------|-------------------------|
-| Yarn     | 18w49a (1.14 snapshot) or higher            | `1.2 MiB`                              | `1.2 MiB`               |
-| Quilt    | 1.19.2 or higher                            | `1.2 MiB`                              | `1.2 MiB`               |
-| Mojang   | 1.14.4 and 19w36a (1.15 snapshot) or higher | `7.5 MiB` (uncompressed) + `494.7 KiB` | `1.1 MiB` + `494.3 KiB` |
+| Mappings | Compatible Minecraft Versions               | Download Size (zipped¹)²               | Cached Size (gzipped)²              |
+|----------|---------------------------------------------|----------------------------------------|-------------------------------------|
+| Yarn     | 18w49a (1.14 snapshot) or higher            | `1.2 MiB`                              | `1.2 MiB`                           |
+| Quilt    | 1.18.2 or higher                            | `1.2 MiB` (+`1.1 MiB` below 1.19.2)    | `1.2 MiB` (+`1.1 MiB` below 1.19.2) |
+| Mojang   | 1.14.4 and 19w36a (1.15 snapshot) or higher | `7.5 MiB` (uncompressed) + `494.7 KiB` | `1.1 MiB` + `494.3 KiB`             |
 
 ¹: Mojang mappings are not compressed<br>
 ²: Sizes as of 30th March 2023 (1.19.4 is latest)

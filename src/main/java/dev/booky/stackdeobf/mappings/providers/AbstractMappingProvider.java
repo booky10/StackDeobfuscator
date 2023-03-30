@@ -7,6 +7,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.mappingio.MappingVisitor;
 
 import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
@@ -18,15 +20,6 @@ public abstract class AbstractMappingProvider {
 
     protected AbstractMappingProvider(String name) {
         this.name = name;
-    }
-
-    public CompletableFuture<Void> cacheMappings(MappingVisitor visitor, Executor executor) {
-        Path cacheDir = getCacheDir();
-
-        return CompletableFuture.completedFuture(null)
-                .thenComposeAsync($ -> this.downloadMappings(cacheDir, executor), executor)
-                .thenCompose($ -> this.parseMappings(executor))
-                .thenCompose($ -> this.visitMappings(visitor, executor));
     }
 
     private static Path getCacheDir() {
@@ -47,6 +40,31 @@ public abstract class AbstractMappingProvider {
 
         Preconditions.checkState(Files.isDirectory(cacheDir), cacheDir + " has to be a directory");
         return cacheDir;
+    }
+
+    public CompletableFuture<Void> cacheMappings(MappingVisitor visitor, Executor executor) {
+        Path cacheDir = getCacheDir();
+
+        return CompletableFuture.completedFuture(null)
+                .thenComposeAsync($ -> this.downloadMappings(cacheDir, executor), executor)
+                .thenCompose($ -> this.parseMappings(executor))
+                .thenCompose($ -> this.visitMappings(visitor, executor));
+    }
+
+    protected byte[] extractPackagedMappings(byte[] jarBytes) {
+        try {
+            Path jarPath = Files.createTempFile(null, ".jar");
+            try {
+                Files.write(jarPath, jarBytes);
+                try (FileSystem jar = FileSystems.newFileSystem(jarPath)) {
+                    return Files.readAllBytes(jar.getPath("mappings", "mappings.tiny"));
+                }
+            } finally {
+                Files.delete(jarPath);
+            }
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
+        }
     }
 
     private CompletableFuture<Long> trackTime(CompletableFuture<Void> future) {

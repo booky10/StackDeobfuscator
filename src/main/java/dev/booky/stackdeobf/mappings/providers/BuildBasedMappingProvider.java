@@ -3,6 +3,7 @@ package dev.booky.stackdeobf.mappings.providers;
 
 import dev.booky.stackdeobf.compat.CompatUtil;
 import dev.booky.stackdeobf.http.HttpUtil;
+import dev.booky.stackdeobf.util.MavenArtifactInfo;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
 import net.fabricmc.mappingio.format.MappingFormat;
@@ -21,8 +22,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
@@ -30,22 +29,16 @@ import java.util.concurrent.Executor;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-public class PackagedMappingProvider extends AbstractMappingProvider {
+public class BuildBasedMappingProvider extends AbstractMappingProvider {
 
-    protected final URI metaUri;
-    protected final String mappingUri;
+    protected final MavenArtifactInfo artifactInfo;
 
     protected Path path;
     protected MemoryMappingTree mappings;
 
-    public PackagedMappingProvider(String name, String repo, String groupId, String artifactId, String classifier) {
+    public BuildBasedMappingProvider(String name, MavenArtifactInfo artifactInfo) {
         super(name);
-
-        groupId = groupId.replace('.', '/');
-        String baseUri = repo + "/" + groupId + "/" + artifactId + "/";
-
-        this.metaUri = URI.create(baseUri + "maven-metadata.xml");
-        this.mappingUri = baseUri + "$VER/" + artifactId + "-$VER-" + classifier + ".jar";
+        this.artifactInfo = artifactInfo;
     }
 
     @Override
@@ -67,37 +60,14 @@ public class PackagedMappingProvider extends AbstractMappingProvider {
                         return CompletableFuture.completedFuture(null);
                     }
 
-                    Path jarPath;
-                    try {
-                        jarPath = Files.createTempFile(this.name + "_" + build, ".jar");
-                    } catch (IOException exception) {
-                        throw new RuntimeException(exception);
-                    }
-
-                    URI uri = URI.create(this.mappingUri.replace("$VER", build));
+                    URI uri = this.artifactInfo.buildUri(build, "jar");
                     CompatUtil.LOGGER.info("Downloading {} mappings jar for build {}...", this.name, build);
 
                     return HttpUtil.getAsync(uri, executor).thenAccept(mappingJarBytes -> {
-                        try {
-                            Files.write(jarPath, mappingJarBytes);
-                        } catch (IOException exception) {
-                            throw new RuntimeException(exception);
-                        }
-
-                        // extract the mappings file from the mappings jar
-                        try (FileSystem jar = FileSystems.newFileSystem(jarPath)) {
-                            Path mappingsPath = jar.getPath("mappings", "mappings.tiny");
-                            try (OutputStream fileOutput = Files.newOutputStream(this.path);
-                                 GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
-                                Files.copy(mappingsPath, gzipOutput);
-                            }
-                        } catch (IOException exception) {
-                            throw new RuntimeException(exception);
-                        }
-
-                        // delete the jar, it is not needed anymore
-                        try {
-                            Files.delete(jarPath);
+                        byte[] mappingBytes = this.extractPackagedMappings(mappingJarBytes);
+                        try (OutputStream fileOutput = Files.newOutputStream(this.path);
+                             GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
+                            gzipOutput.write(mappingBytes);
                         } catch (IOException exception) {
                             throw new RuntimeException(exception);
                         }
@@ -128,8 +98,10 @@ public class PackagedMappingProvider extends AbstractMappingProvider {
                 }
             }
 
+            URI metaUri = this.artifactInfo.buildMetaUri();
             CompatUtil.LOGGER.info("Fetching latest {} build...", this.name);
-            return HttpUtil.getAsync(this.metaUri, executor).thenApply(resp -> {
+
+            return HttpUtil.getAsync(metaUri, executor).thenApply(resp -> {
                 try (InputStream input = new ByteArrayInputStream(resp)) {
                     Document document;
                     try {
@@ -143,10 +115,17 @@ public class PackagedMappingProvider extends AbstractMappingProvider {
                     NodeList versions = document.getElementsByTagName("version");
                     for (int i = versions.getLength() - 1; i >= 0; i--) {
                         String version = versions.item(i).getTextContent();
-                        if (!version.startsWith(mcVersion + "+")
-                                // 19w14b and before have this formatting
-                                && !version.startsWith(mcVersion + ".")) {
-                            continue;
+                        if (!version.startsWith(mcVersion + "+")) {
+                            // 19w14b and before have this formatting
+                            if (!version.startsWith(mcVersion + ".")) {
+                                continue;
+                            }
+
+                            if (version.substring((mcVersion + ".").length()).indexOf('.') != -1) {
+                                // mcVersion is something like "1.19" and version is something like "1.19.4+build.1"
+                                // this prevents this being recognized as a valid mapping
+                                continue;
+                            }
                         }
 
                         Files.writeString(versionCachePath, version);
@@ -157,7 +136,7 @@ public class PackagedMappingProvider extends AbstractMappingProvider {
 
                     throw new IllegalArgumentException("Can't find " + this.name + " mappings for minecraft version " + mcVersion);
                 } catch (IOException exception) {
-                    throw new RuntimeException("Can't parse response from " + this.metaUri + " for " + mcVersion, exception);
+                    throw new RuntimeException("Can't parse response from " + metaUri + " for " + mcVersion, exception);
                 }
             });
         }, executor);

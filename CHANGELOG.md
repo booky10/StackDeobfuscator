@@ -1,3 +1,8 @@
+## v1.3.1
+
+- Added support for quilt mappings below 1.19.2
+  - Now goes down to 1.18.2
+
 ## v1.3.0
 
 - Mappings are now loaded asynchronously, removing startup time impact

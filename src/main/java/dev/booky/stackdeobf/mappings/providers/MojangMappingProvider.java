@@ -25,11 +25,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -47,8 +44,13 @@ public class MojangMappingProvider extends AbstractMappingProvider {
             the Minecraft End User License Agreement available at https://account.mojang.com/documents/minecraft_eula.
             """;
 
-    private Path mojangPath, intermediaryPath;
-    private MemoryMappingTree mojang, intermediary;
+    // the production/intermediary mappings need to be mapped back to their
+    // obfuscated form, because mojang mappings are obfuscated -> named,
+    // without the intermediary mappings inbetween
+    private final IntermediaryMappingProvider intermediary = new IntermediaryMappingProvider();
+
+    private Path path;
+    private MemoryMappingTree mappings;
 
     public MojangMappingProvider() {
         super("mojang");
@@ -63,65 +65,23 @@ public class MojangMappingProvider extends AbstractMappingProvider {
 
     @Override
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
-        this.mojangPath = cacheDir.resolve("mojang_" + CompatUtil.VERSION_ID + ".gz");
+        CompletableFuture<Void> intermediaryFuture = this.intermediary.downloadMappings0(cacheDir, executor);
 
-        // only create futures if no mappings are locally cached
-        List<CompletableFuture<?>> futures = new ArrayList<>(2);
-
-        if (Files.notExists(this.mojangPath)) {
-            futures.add(this.fetchMojangMappingsUri(CompatUtil.VERSION_ID, executor)
-                    .thenCompose(uri -> HttpUtil.getAsync(uri, executor))
-                    .thenAccept(mappingBytes -> {
-                        try (OutputStream fileOutput = Files.newOutputStream(this.mojangPath);
-                             GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
-                            gzipOutput.write(mappingBytes);
-                        } catch (IOException exception) {
-                            throw new RuntimeException(exception);
-                        }
-                    }));
+        this.path = cacheDir.resolve("mojang_" + CompatUtil.VERSION_ID + ".gz");
+        if (Files.exists(this.path)) {
+            return intermediaryFuture;
         }
 
-        // see comment in "parseMappings" method for why intermediary mappings are needed
-        this.intermediaryPath = cacheDir.resolve("intermediary_" + CompatUtil.VERSION_ID + ".gz");
-        if (Files.notExists(this.intermediaryPath)) {
-            Path intermediaryJarPath;
-            try {
-                intermediaryJarPath = Files.createTempFile("intermediary_" + CompatUtil.VERSION_ID, ".jar");
-            } catch (IOException exception) {
-                throw new RuntimeException(exception);
-            }
-
-            URI intermediaryUri = URI.create("https://maven.fabricmc.net/net/fabricmc/intermediary/" +
-                    CompatUtil.VERSION_ID + "/intermediary-" + CompatUtil.VERSION_ID + "-v2.jar");
-
-            futures.add(HttpUtil.getAsync(intermediaryUri, executor).thenAccept(intermediaryJarBytes -> {
-                try {
-                    Files.write(intermediaryJarPath, intermediaryJarBytes);
-                } catch (IOException exception) {
-                    throw new RuntimeException(exception);
-                }
-
-                // extract the mappings file from the mappings jar
-                try (FileSystem jar = FileSystems.newFileSystem(intermediaryJarPath)) {
-                    Path mappingsPath = jar.getPath("mappings", "mappings.tiny");
-                    try (OutputStream fileOutput = Files.newOutputStream(this.intermediaryPath);
+        return intermediaryFuture.thenCompose($ -> this.fetchMojangMappingsUri(CompatUtil.VERSION_ID, executor)
+                .thenCompose(uri -> HttpUtil.getAsync(uri, executor))
+                .thenAccept(mappingBytes -> {
+                    try (OutputStream fileOutput = Files.newOutputStream(this.path);
                          GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
-                        Files.copy(mappingsPath, gzipOutput);
+                        gzipOutput.write(mappingBytes);
+                    } catch (IOException exception) {
+                        throw new RuntimeException(exception);
                     }
-                } catch (IOException exception) {
-                    throw new RuntimeException(exception);
-                }
-
-                // delete the jar, it is not needed anymore
-                try {
-                    Files.delete(intermediaryJarPath);
-                } catch (IOException exception) {
-                    throw new RuntimeException(exception);
-                }
-            }));
-        }
-
-        return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
+                }));
     }
 
     private CompletableFuture<URI> fetchMojangMappingsUri(String mcVersion, Executor executor) {
@@ -167,46 +127,29 @@ public class MojangMappingProvider extends AbstractMappingProvider {
 
     @Override
     protected CompletableFuture<Void> parseMappings0(Executor executor) {
-        return CompletableFuture.supplyAsync(() -> {
+        return this.intermediary.parseMappings0(executor).thenRun(() -> {
             try {
-                // the production mappings need to be mapped back to their
-                // obfuscated form, because mojang mappings are obfuscated -> named,
-                // without the intermediary mappings inbetween
+                MemoryMappingTree rawMappings = new MemoryMappingTree();
 
-                this.mojang = this.parseMojangMappings();
-                this.intermediary = this.parseIntermediaryMappings();
+                try (InputStream fileInput = Files.newInputStream(this.path);
+                     GZIPInputStream gzipInput = new GZIPInputStream(fileInput);
+                     Reader reader = new InputStreamReader(gzipInput)) {
+                    MappingReader.read(reader, MappingFormat.PROGUARD, rawMappings);
+                }
+
+                rawMappings.setSrcNamespace("named");
+                rawMappings.setDstNamespaces(List.of("official"));
+
+                // mappings provided by mojang are named -> obfuscated
+                // this needs to be switched for the remapping to work properly
+
+                MemoryMappingTree switchedMappings = new MemoryMappingTree();
+                rawMappings.accept(new MappingSourceNsSwitch(switchedMappings, "official"));
+                this.mappings = switchedMappings;
             } catch (IOException exception) {
                 throw new RuntimeException(exception);
             }
-            return null;
-        }, executor);
-    }
-
-    private MemoryMappingTree parseMojangMappings() throws IOException {
-        MemoryMappingTree rawMappings = new MemoryMappingTree();
-
-        try (InputStream fileInput = Files.newInputStream(this.mojangPath);
-             GZIPInputStream gzipInput = new GZIPInputStream(fileInput);
-             Reader reader = new InputStreamReader(gzipInput)) {
-            MappingReader.read(reader, MappingFormat.PROGUARD, rawMappings);
-        }
-
-        rawMappings.setSrcNamespace("named");
-        rawMappings.setDstNamespaces(List.of("official"));
-
-        MemoryMappingTree switchedMappings = new MemoryMappingTree();
-        rawMappings.accept(new MappingSourceNsSwitch(switchedMappings, "official"));
-        return switchedMappings;
-    }
-
-    private MemoryMappingTree parseIntermediaryMappings() throws IOException {
-        MemoryMappingTree mappings = new MemoryMappingTree();
-        try (InputStream fileInput = Files.newInputStream(this.intermediaryPath);
-             GZIPInputStream gzipInput = new GZIPInputStream(fileInput);
-             Reader reader = new InputStreamReader(gzipInput)) {
-            MappingReader.read(reader, MappingFormat.TINY_2, mappings);
-        }
-        return mappings;
+        });
     }
 
     @Override
@@ -215,7 +158,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
             try {
                 // the source names need to be mapped to intermediary, because
                 // the specified visitor expects to receive intermediary source names
-                this.mojang.accept(new Visitor(visitor));
+                this.mappings.accept(new Visitor(visitor));
             } catch (IOException exception) {
                 throw new RuntimeException(exception);
             }
@@ -233,29 +176,29 @@ public class MojangMappingProvider extends AbstractMappingProvider {
 
         @Override
         public boolean visitClass(String srcName) throws IOException {
-            this.clazz = MojangMappingProvider.this.intermediary.getClass(srcName);
-            if (this.clazz != null) {
-                return super.visitClass(this.clazz.getDstName(0));
+            this.clazz = MojangMappingProvider.this.intermediary.getMappings().getClass(srcName);
+            if (this.clazz == null) {
+                return false;
             }
-            return false;
+            return super.visitClass(this.clazz.getDstName(0));
         }
 
         @Override
         public boolean visitMethod(String srcName, String srcDesc) throws IOException {
             MappingTree.MethodMapping mapping = this.clazz.getMethod(srcName, srcDesc);
-            if (mapping != null) {
-                return super.visitMethod(mapping.getDstName(0), mapping.getDstDesc(0));
+            if (mapping == null) {
+                return false;
             }
-            return false;
+            return super.visitMethod(mapping.getDstName(0), mapping.getDstDesc(0));
         }
 
         @Override
         public boolean visitField(String srcName, String srcDesc) throws IOException {
             MappingTree.FieldMapping mapping = this.clazz.getField(srcName, srcDesc);
-            if (mapping != null) {
-                return super.visitField(mapping.getDstName(0), mapping.getDstDesc(0));
+            if (mapping == null) {
+                return false;
             }
-            return false;
+            return super.visitField(mapping.getDstName(0), mapping.getDstDesc(0));
         }
     }
 }

@@ -14,7 +14,7 @@ fun getGitCommit(): String {
     return stdout.toString().trim()
 }
 
-version = "1.2.1+fabric.${getGitCommit()}"
+version = "1.3.0+fabric.${getGitCommit()}"
 group = "dev.booky"
 
 dependencies {

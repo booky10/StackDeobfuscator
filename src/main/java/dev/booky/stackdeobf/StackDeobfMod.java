@@ -9,7 +9,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 public class StackDeobfMod implements ModInitializer {
@@ -29,8 +28,8 @@ public class StackDeobfMod implements ModInitializer {
         try {
             Path configPath = FabricLoader.getInstance().getConfigDir().resolve("stackdeobf.json");
             return StackDeobfConfig.load(configPath);
-        } catch (IOException exception) {
-            throw new RuntimeException(exception);
+        } catch (Throwable throwable) {
+            throw new RuntimeException("Exception occurred while loading stack deobfuscator configuration", throwable);
         }
     }
 }

@@ -2,12 +2,18 @@
   "schemaVersion": 1,
   "id": "stackdeobfuscator",
   "version": "${version}",
-  "name": "StackDeobfuscator",
 
-  "description": "Deobfuscates stacktraces",
+  "name": "StackDeobfuscator",
+  "description": "Deobfuscates stacktraces to yarn/quilt/mojang mappings",
+
   "authors": [
     "booky10"
   ],
+
+  "contact": {
+    "issues": "https://github.com/booky10/StackDeobfuscator/issues",
+    "sources": "https://github.com/booky10/StackDeobfuscator"
+  },
 
   "icon": "assets/stackdeobf/icon.png",
   "license": "LGPL-3.0-only",

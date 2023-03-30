@@ -2,15 +2,15 @@
 
 - Mappings are now loaded asynchronously, removing startup time impact
 - Added more log messages (e.g. time tracking and detailed http requests)
-- Added support for (mostly) every minecraft version (starting from 18w49a)
-    - 18w49 because this is the first yarn release
-    - Mojang mappings will error if used below 19w36a (1.14.4 excluded)
-    - Quilt mappings will error if used below 1.19.2
-- Yarn/Quilt versions are now cached for two days before being refreshed
-- Added note in stacktraces when something has been remapped ("MC//" prefix before class)
+- Added support for more minecraft versions
+    - Yarn: 18w49a (1.14 snapshot) or higher
+    - Quilt: 1.19.2 or higher
+    - Mojang: 1.14.4 and 19w36a (1.15 snapshot) or higher
+- Yarn/Quilt versions are now cached for 48 hours before being refreshed
+- Added note in stacktraces when something has been remapped (`MC//` prefix before classname)
 - Custom mappings now support the in-jar format used by intermediary, yarn and quilt
-    - They also support GZIP (without TAR) and normal ZIP (just one file in a zip) compression
-    - Auto-detected by file name extension
+    - They also support GZIP (without TAR) and normal ZIP (just one file in a zip) compression<br>
+      → Auto-detected by file name extension
 - All cached mappings (yarn, quilt, intermediary and mojang) are now saved GZIP compressed
 
 ## v1.2.1

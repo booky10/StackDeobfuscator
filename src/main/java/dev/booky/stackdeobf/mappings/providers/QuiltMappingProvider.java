@@ -67,10 +67,11 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
             return future;
         }
 
-        URI hashedUri = HASHED_MAPPINGS_ARTIFACT.buildUri(CompatUtil.VERSION_ID, "tiny");
+        URI hashedUri = HASHED_MAPPINGS_ARTIFACT.buildUri(CompatUtil.VERSION_ID, "jar");
         CompatUtil.LOGGER.info("Downloading hashed {} mappings for {}...", this.name, CompatUtil.VERSION_ID);
 
-        return future.thenCompose($ -> HttpUtil.getAsync(hashedUri, executor).thenAccept(mappingBytes -> {
+        return future.thenCompose($ -> HttpUtil.getAsync(hashedUri, executor).thenAccept(jarBytes -> {
+            byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
             try (OutputStream fileOutput = Files.newOutputStream(this.hashedPath);
                  GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
                 gzipOutput.write(mappingBytes);

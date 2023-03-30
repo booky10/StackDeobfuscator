@@ -141,8 +141,10 @@ public final class RemappingUtil {
 
     public static StackTraceElement remapStackTraceElement(StackTraceElement element) {
         String className = element.getClassName();
+        boolean remappedClass = false;
         if (className.startsWith("net.minecraft.class_")) {
             className = remapClasses(className);
+            remappedClass = true;
         }
 
         String fileName = element.getFileName();
@@ -155,7 +157,7 @@ public final class RemappingUtil {
             methodName = remapMethods(methodName);
         }
 
-        return new StackTraceElement(null /*dropped on purpose*/, element.getModuleName(), element.getModuleVersion(),
+        return new StackTraceElement(remappedClass ? "MC" : null, element.getModuleName(), element.getModuleVersion(),
                 className, methodName, fileName, element.getLineNumber());
     }
 }

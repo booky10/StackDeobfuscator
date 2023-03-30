@@ -7,6 +7,7 @@
     - Mojang mappings will error if used below 19w36a (1.14.4 excluded)
     - Quilt mappings will error if used below 1.19.2
 - Yarn/Quilt versions are now cached for two days before being refreshed
+- Added note in stacktraces when something has been remapped ("MC//" prefix before class)
 
 ## v1.2.1
 

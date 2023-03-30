@@ -52,7 +52,7 @@ public class PackagedMappingProvider extends AbstractMappingProvider {
         // before mojang mappings) include the current commit hash in the version.json name
         version = StringUtils.split(version, ' ')[0];
 
-        return this.fetchLatestVersion(version, executor)
+        return this.fetchLatestVersion(cacheDir, version, executor)
                 .thenCompose(build -> {
                     this.path = cacheDir.resolve(this.name + "_" + build + ".txt");
 
@@ -91,34 +91,62 @@ public class PackagedMappingProvider extends AbstractMappingProvider {
                 });
     }
 
-    private CompletableFuture<String> fetchLatestVersion(String mcVersion, Executor executor) {
-        CompatUtil.LOGGER.info("Fetching latest {} build for {}...", this.name, mcVersion);
-        return HttpUtil.getAsync(this.metaUri, executor).thenApply(resp -> {
-            try (InputStream input = new ByteArrayInputStream(resp)) {
-                Document document;
+    private CompletableFuture<String> fetchLatestVersion(Path cacheDir, String mcVersion, Executor executor) {
+        return CompletableFuture.completedFuture(null).thenComposeAsync($ -> {
+            Path versionCachePath = cacheDir.resolve(this.name + "_" + mcVersion + "_latest.txt");
+            if (Files.exists(versionCachePath)) {
                 try {
-                    // https://stackoverflow.com/a/14968272
-                    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                    document = factory.newDocumentBuilder().parse(input);
-                } catch (ParserConfigurationException | SAXException exception) {
-                    throw new IOException(exception);
-                }
+                    long lastVersionFetch = Files.getLastModifiedTime(versionCachePath).toMillis();
+                    long timeDiff = (System.currentTimeMillis() - lastVersionFetch) / 1000 / 60;
 
-                NodeList versions = document.getElementsByTagName("version");
-                for (int i = versions.getLength() - 1; i >= 0; i--) {
-                    String version = versions.item(i).getTextContent();
-                    if (version.startsWith(mcVersion + "+")
-                            // 19w14b and before have this formatting
-                            || version.startsWith(mcVersion + ".")) {
+                    long maxTimeDiff = Long.getLong("stackdeobf.build-refresh-cooldown", 2 * 24 * 60 /* specified in minutes */);
+                    if (timeDiff <= maxTimeDiff) {
+                        // latest build has already been fetched in the last x minutes (default: 2 days)
+                        CompatUtil.LOGGER.info("Latest build for {} is already cached ({} hour(s) ago, refresh in {} hour(s))",
+                                this.name, (long) Math.floor(timeDiff / 60d), (long) Math.ceil((maxTimeDiff - timeDiff) / 60d));
+                        return CompletableFuture.completedFuture(Files.readString(versionCachePath).trim());
+                    } else {
+                        CompatUtil.LOGGER.info("Refreshing latest {} build (last refresh was {} hour(s) ago)...",
+                                this.name, (long) Math.ceil(timeDiff / 60d));
+                    }
+                } catch (IOException exception) {
+                    throw new RuntimeException(exception);
+                }
+            }
+
+            CompatUtil.LOGGER.info("Fetching latest {} build...", this.name);
+            return HttpUtil.getAsync(this.metaUri, executor).thenApply(resp -> {
+                try (InputStream input = new ByteArrayInputStream(resp)) {
+                    Document document;
+                    try {
+                        // https://stackoverflow.com/a/14968272
+                        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                        document = factory.newDocumentBuilder().parse(input);
+                    } catch (ParserConfigurationException | SAXException exception) {
+                        throw new IOException(exception);
+                    }
+
+                    NodeList versions = document.getElementsByTagName("version");
+                    for (int i = versions.getLength() - 1; i >= 0; i--) {
+                        String version = versions.item(i).getTextContent();
+                        if (!version.startsWith(mcVersion + "+")
+                                // 19w14b and before have this formatting
+                                && !version.startsWith(mcVersion + ".")) {
+                            continue;
+                        }
+
+                        Files.writeString(versionCachePath, version);
+                        CompatUtil.LOGGER.info("Cached latest {} build version: {}", this.name, version);
+
                         return version;
                     }
-                }
 
-                throw new IllegalArgumentException("Can't find " + this.name + " mappings for minecraft version " + mcVersion);
-            } catch (IOException exception) {
-                throw new RuntimeException("Can't parse response from " + this.metaUri + " for " + mcVersion, exception);
-            }
-        });
+                    throw new IllegalArgumentException("Can't find " + this.name + " mappings for minecraft version " + mcVersion);
+                } catch (IOException exception) {
+                    throw new RuntimeException("Can't parse response from " + this.metaUri + " for " + mcVersion, exception);
+                }
+            });
+        }, executor);
     }
 
     @Override

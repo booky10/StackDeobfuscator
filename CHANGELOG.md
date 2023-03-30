@@ -4,8 +4,8 @@
 - Added more log messages (e.g. time tracking and detailed http requests)
 - Added support for (mostly) every minecraft version (starting from 18w49a)
     - 18w49 because this is the first yarn release
-    - Mojang mappings will error if used below 19w36a
-    - Quilt mappings will error if used below 22w14a
+    - Mojang mappings will error if used below 19w36a (1.14.4 excluded)
+    - Quilt mappings will error if used below 1.19.2
 
 ## v1.2.1
 

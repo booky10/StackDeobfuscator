@@ -16,6 +16,7 @@ import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.tree.MappingTree;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 import net.minecraft.util.GsonHelper;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -38,6 +39,14 @@ import java.util.zip.GZIPOutputStream;
 
 public class MojangMappingProvider extends AbstractMappingProvider {
 
+    private static final String LICENSE = """
+            (c) 2020 Microsoft Corporation.These mappings are provided "as-is" and you bear the risk of using them.
+            You may copy and use the mappings for development purposes, but you may not redistribute the mappings complete and unmodified.
+            Microsoft makes no warranties, express or implied, with respect to the mappings provided here.
+            Use and modification of this document or the source code (in any form) of Minecraft: Java Edition is governed by
+            the Minecraft End User License Agreement available at https://account.mojang.com/documents/minecraft_eula.
+            """;
+
     private Path mojangPath, intermediaryPath;
     private MemoryMappingTree mojang, intermediary;
 
@@ -45,6 +54,11 @@ public class MojangMappingProvider extends AbstractMappingProvider {
         super("mojang");
         Preconditions.checkState(CompatUtil.WORLD_VERSION >= 2203 || CompatUtil.WORLD_VERSION == 1976,
                 "Mojang mappings are only provided by mojang starting from 19w36a (excluding 1.14.4)");
+
+        CompatUtil.LOGGER.warn("By enabling mojang mappings, you agree to their license:");
+        for (String line : StringUtils.split(LICENSE, '\n')) {
+            CompatUtil.LOGGER.warn(line);
+        }
     }
 
     @Override

@@ -1,6 +1,7 @@
 package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (17:42 23.03.23)
 
+import com.google.common.base.Preconditions;
 import dev.booky.stackdeobf.compat.CompatUtil;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
@@ -11,12 +12,20 @@ import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
 
 public class CustomMappingProvider extends AbstractMappingProvider {
 
@@ -50,7 +59,7 @@ public class CustomMappingProvider extends AbstractMappingProvider {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 MemoryMappingTree mappings = new MemoryMappingTree();
-                MappingReader.read(this.path, this.format, mappings);
+                this.readPath(this.path, mappings, this.format);
 
                 if (!"intermediary".equals(mappings.getSrcNamespace())) {
                     if (!mappings.getDstNamespaces().contains("intermediary")) {
@@ -96,6 +105,47 @@ public class CustomMappingProvider extends AbstractMappingProvider {
             }
             return null;
         }, executor);
+    }
+
+    private void readPath(Path path, MappingVisitor visitor, MappingFormat format) throws IOException {
+        String contentType = Files.probeContentType(path);
+        if ("application/gzip".equals(contentType)) {
+            try (InputStream fileInput = Files.newInputStream(path);
+                 GZIPInputStream gzipInput = new GZIPInputStream(fileInput);
+                 Reader reader = new InputStreamReader(gzipInput)) {
+                MappingReader.read(reader, format, visitor);
+            }
+        }
+
+        if ("application/java-archive".equals(contentType) || "application/zip".equals(contentType)) {
+            try (FileSystem archive = FileSystems.newFileSystem(path)) {
+                Path innerPath = archive.getPath("mappings", "mappings.tiny");
+                if (Files.notExists(innerPath)) {
+                    Path singlePath = null;
+                    for (Path directory : archive.getRootDirectories()) {
+                        try (Stream<Path> files = Files.list(directory)) {
+                            for (Path subPath : files.toList()) {
+                                Preconditions.checkState(singlePath == null,
+                                        "More than one file found in " + path.toAbsolutePath());
+                                singlePath = subPath;
+                            }
+                        }
+                    }
+                    innerPath = singlePath;
+                }
+                Objects.requireNonNull(innerPath, "No mappings file found in " + path.toAbsolutePath());
+
+                this.readPath(innerPath, visitor, format);
+                return;
+            }
+        }
+
+        if (contentType != null && !"text/plain".equals(contentType)) {
+            CompatUtil.LOGGER.warn("Can't recognize content type of {}, assuming it's plain text",
+                    path.toAbsolutePath());
+        }
+
+        MappingReader.read(path, format, visitor);
     }
 
     public Path getPath() {

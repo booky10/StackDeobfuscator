@@ -17,6 +17,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -24,6 +27,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class PackagedMappingProvider extends AbstractMappingProvider {
 
@@ -54,7 +59,7 @@ public class PackagedMappingProvider extends AbstractMappingProvider {
 
         return this.fetchLatestVersion(cacheDir, version, executor)
                 .thenCompose(build -> {
-                    this.path = cacheDir.resolve(this.name + "_" + build + ".txt");
+                    this.path = cacheDir.resolve(this.name + "_" + build + ".gz");
 
                     // already cached, don't download anything
                     if (Files.exists(this.path)) {
@@ -62,10 +67,16 @@ public class PackagedMappingProvider extends AbstractMappingProvider {
                         return CompletableFuture.completedFuture(null);
                     }
 
-                    Path jarPath = cacheDir.resolve(this.name + "_" + build + ".jar");
-                    URI uri = URI.create(this.mappingUri.replace("$VER", build));
+                    Path jarPath;
+                    try {
+                        jarPath = Files.createTempFile(this.name + "_" + build, ".jar");
+                    } catch (IOException exception) {
+                        throw new RuntimeException(exception);
+                    }
 
+                    URI uri = URI.create(this.mappingUri.replace("$VER", build));
                     CompatUtil.LOGGER.info("Downloading {} mappings jar for build {}...", this.name, build);
+
                     return HttpUtil.getAsync(uri, executor).thenAccept(mappingJarBytes -> {
                         try {
                             Files.write(jarPath, mappingJarBytes);
@@ -75,8 +86,11 @@ public class PackagedMappingProvider extends AbstractMappingProvider {
 
                         // extract the mappings file from the mappings jar
                         try (FileSystem jar = FileSystems.newFileSystem(jarPath)) {
-                            Path mappingsPath = jar.getPath("mappings/mappings.tiny");
-                            Files.copy(mappingsPath, this.path);
+                            Path mappingsPath = jar.getPath("mappings", "mappings.tiny");
+                            try (OutputStream fileOutput = Files.newOutputStream(this.path);
+                                 GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
+                                Files.copy(mappingsPath, gzipOutput);
+                            }
                         } catch (IOException exception) {
                             throw new RuntimeException(exception);
                         }
@@ -152,13 +166,17 @@ public class PackagedMappingProvider extends AbstractMappingProvider {
     @Override
     protected CompletableFuture<Void> parseMappings0(Executor executor) {
         return CompletableFuture.supplyAsync(() -> {
-            try {
-                MemoryMappingTree inter2named = new MemoryMappingTree();
-                MappingReader.read(this.path, MappingFormat.TINY_2, inter2named);
-                this.mappings = inter2named;
+            MemoryMappingTree mappings = new MemoryMappingTree();
+
+            try (InputStream fileInput = Files.newInputStream(this.path);
+                 GZIPInputStream gzipInput = new GZIPInputStream(fileInput);
+                 Reader reader = new InputStreamReader(gzipInput)) {
+                MappingReader.read(reader, MappingFormat.TINY_2, mappings);
             } catch (IOException exception) {
                 throw new RuntimeException(exception);
             }
+
+            this.mappings = mappings;
             return null;
         }, executor);
     }

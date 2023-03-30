@@ -19,7 +19,9 @@ import net.minecraft.util.GsonHelper;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.net.URI;
 import java.nio.file.FileSystem;
@@ -31,6 +33,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class MojangMappingProvider extends AbstractMappingProvider {
 
@@ -45,7 +49,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
 
     @Override
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
-        this.mojangPath = cacheDir.resolve("mojang_" + CompatUtil.VERSION_ID + ".txt");
+        this.mojangPath = cacheDir.resolve("mojang_" + CompatUtil.VERSION_ID + ".gz");
 
         // only create futures if no mappings are locally cached
         List<CompletableFuture<?>> futures = new ArrayList<>(2);
@@ -54,8 +58,9 @@ public class MojangMappingProvider extends AbstractMappingProvider {
             futures.add(this.fetchMojangMappingsUri(CompatUtil.VERSION_ID, executor)
                     .thenCompose(uri -> HttpUtil.getAsync(uri, executor))
                     .thenAccept(mappingBytes -> {
-                        try {
-                            Files.write(this.mojangPath, mappingBytes);
+                        try (OutputStream fileOutput = Files.newOutputStream(this.mojangPath);
+                             GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
+                            gzipOutput.write(mappingBytes);
                         } catch (IOException exception) {
                             throw new RuntimeException(exception);
                         }
@@ -63,9 +68,15 @@ public class MojangMappingProvider extends AbstractMappingProvider {
         }
 
         // see comment in "parseMappings" method for why intermediary mappings are needed
-        this.intermediaryPath = cacheDir.resolve("intermediary_" + CompatUtil.VERSION_ID + ".txt");
+        this.intermediaryPath = cacheDir.resolve("intermediary_" + CompatUtil.VERSION_ID + ".gz");
         if (Files.notExists(this.intermediaryPath)) {
-            Path intermediaryJarPath = cacheDir.resolve("intermediary_" + CompatUtil.VERSION_ID + ".jar");
+            Path intermediaryJarPath;
+            try {
+                intermediaryJarPath = Files.createTempFile("intermediary_" + CompatUtil.VERSION_ID, ".jar");
+            } catch (IOException exception) {
+                throw new RuntimeException(exception);
+            }
+
             URI intermediaryUri = URI.create("https://maven.fabricmc.net/net/fabricmc/intermediary/" +
                     CompatUtil.VERSION_ID + "/intermediary-" + CompatUtil.VERSION_ID + "-v2.jar");
 
@@ -78,8 +89,11 @@ public class MojangMappingProvider extends AbstractMappingProvider {
 
                 // extract the mappings file from the mappings jar
                 try (FileSystem jar = FileSystems.newFileSystem(intermediaryJarPath)) {
-                    Path mappingsPath = jar.getPath("mappings/mappings.tiny");
-                    Files.copy(mappingsPath, this.intermediaryPath);
+                    Path mappingsPath = jar.getPath("mappings", "mappings.tiny");
+                    try (OutputStream fileOutput = Files.newOutputStream(this.intermediaryPath);
+                         GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
+                        Files.copy(mappingsPath, gzipOutput);
+                    }
                 } catch (IOException exception) {
                     throw new RuntimeException(exception);
                 }
@@ -155,21 +169,30 @@ public class MojangMappingProvider extends AbstractMappingProvider {
     }
 
     private MemoryMappingTree parseMojangMappings() throws IOException {
-        MemoryMappingTree moj2obf = new MemoryMappingTree();
-        MappingReader.read(this.mojangPath, MappingFormat.PROGUARD, moj2obf);
+        MemoryMappingTree rawMappings = new MemoryMappingTree();
 
-        moj2obf.setSrcNamespace("named");
-        moj2obf.setDstNamespaces(List.of("official"));
+        try (InputStream fileInput = Files.newInputStream(this.mojangPath);
+             GZIPInputStream gzipInput = new GZIPInputStream(fileInput);
+             Reader reader = new InputStreamReader(gzipInput)) {
+            MappingReader.read(reader, MappingFormat.PROGUARD, rawMappings);
+        }
 
-        MemoryMappingTree obf2moj = new MemoryMappingTree();
-        moj2obf.accept(new MappingSourceNsSwitch(obf2moj, "official"));
-        return obf2moj;
+        rawMappings.setSrcNamespace("named");
+        rawMappings.setDstNamespaces(List.of("official"));
+
+        MemoryMappingTree switchedMappings = new MemoryMappingTree();
+        rawMappings.accept(new MappingSourceNsSwitch(switchedMappings, "official"));
+        return switchedMappings;
     }
 
     private MemoryMappingTree parseIntermediaryMappings() throws IOException {
-        MemoryMappingTree obf2inter = new MemoryMappingTree();
-        MappingReader.read(this.intermediaryPath, MappingFormat.TINY_2, obf2inter);
-        return obf2inter;
+        MemoryMappingTree mappings = new MemoryMappingTree();
+        try (InputStream fileInput = Files.newInputStream(this.intermediaryPath);
+             GZIPInputStream gzipInput = new GZIPInputStream(fileInput);
+             Reader reader = new InputStreamReader(gzipInput)) {
+            MappingReader.read(reader, MappingFormat.TINY_2, mappings);
+        }
+        return mappings;
     }
 
     @Override

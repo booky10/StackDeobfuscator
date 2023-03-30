@@ -8,6 +8,10 @@
     - Quilt mappings will error if used below 1.19.2
 - Yarn/Quilt versions are now cached for two days before being refreshed
 - Added note in stacktraces when something has been remapped ("MC//" prefix before class)
+- Custom mappings now support the in-jar format used by intermediary, yarn and quilt
+    - They also support GZIP (without TAR) and normal ZIP (just one file in a zip) compression
+    - Auto-detected by file name extension
+- All cached mappings (yarn, quilt, intermediary and mojang) are now saved GZIP compressed
 
 ## v1.2.1
 

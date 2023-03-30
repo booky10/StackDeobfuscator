@@ -39,7 +39,8 @@ public class MojangMappingProvider extends AbstractMappingProvider {
 
     public MojangMappingProvider() {
         super("mojang");
-        Preconditions.checkState(CompatUtil.WORLD_VERSION >= 2203, "Mojang mappings are only provided by mojang starting from 19w36a");
+        Preconditions.checkState(CompatUtil.WORLD_VERSION >= 2203 || CompatUtil.WORLD_VERSION == 1976,
+                "Mojang mappings are only provided by mojang starting from 19w36a (excluding 1.14.4)");
     }
 
     @Override

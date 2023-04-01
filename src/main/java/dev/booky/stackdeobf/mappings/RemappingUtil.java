@@ -8,6 +8,7 @@ import org.apache.logging.log4j.core.filter.AbstractFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class RemappingUtil {
@@ -74,7 +75,7 @@ public final class RemappingUtil {
         return METHOD_PATTERN.matcher(string).replaceAll(result -> {
             int methodId = Integer.parseInt(result.group(1));
             String methodName = CachedMappings.remapMethod(methodId);
-            return methodName == null ? result.group() : methodName;
+            return methodName == null ? result.group() : Matcher.quoteReplacement(methodName);
         });
     }
 

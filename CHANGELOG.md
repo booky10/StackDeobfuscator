@@ -1,3 +1,7 @@
+## v1.3.2
+
+- Fix exceptions when remapping lambda methods
+
 ## v1.3.1
 
 - Added support for quilt mappings below 1.19.2

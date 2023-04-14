@@ -1,7 +1,7 @@
 package dev.booky.stackdeobf.http;
 // Created by booky10 in StackDeobfuscator (18:10 29.03.23)
 
-import dev.booky.stackdeobf.compat.CompatUtil;
+import dev.booky.stackdeobf.util.CompatUtil;
 import org.apache.commons.io.FileUtils;
 
 import java.net.URI;

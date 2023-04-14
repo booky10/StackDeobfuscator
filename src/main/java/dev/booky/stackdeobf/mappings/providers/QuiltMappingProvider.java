@@ -2,8 +2,8 @@ package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (22:06 23.03.23)
 
 import com.google.common.base.Preconditions;
-import dev.booky.stackdeobf.compat.CompatUtil;
 import dev.booky.stackdeobf.http.HttpUtil;
+import dev.booky.stackdeobf.util.CompatUtil;
 import dev.booky.stackdeobf.util.MavenArtifactInfo;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;

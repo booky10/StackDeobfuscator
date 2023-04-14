@@ -2,8 +2,8 @@ package dev.booky.stackdeobf.mappings;
 // Created by booky10 in StackDeobfuscator (17:04 20.03.23)
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import dev.booky.stackdeobf.compat.CompatUtil;
 import dev.booky.stackdeobf.mappings.providers.AbstractMappingProvider;
+import dev.booky.stackdeobf.util.CompatUtil;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;

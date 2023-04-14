@@ -2,7 +2,7 @@ package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (17:42 23.03.23)
 
 import com.google.common.base.Preconditions;
-import dev.booky.stackdeobf.compat.CompatUtil;
+import dev.booky.stackdeobf.util.CompatUtil;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
 import net.fabricmc.mappingio.adapter.MappingDstNsReorder;

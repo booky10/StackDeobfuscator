@@ -1,11 +1,11 @@
-package dev.booky.stackdeobf.compat;
+package dev.booky.stackdeobf.util;
 // Created by booky10 in StackDeobfuscator (21:20 29.03.23)
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import dev.booky.stackdeobf.StackDeobfMod;
 import org.apache.logging.log4j.LogManager;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,19 +34,9 @@ public final class CompatUtil {
     public static final String VERSION_NAME = VERSION_DATA.get("name").getAsString();
     public static final int WORLD_VERSION = VERSION_DATA.get("world_version").getAsInt();
 
-    public static final ILogger LOGGER;
-
-    static {
-        ILogger logger;
-        try {
-            // versions below 22w03a don't have mojangs logging library and therefore no slf4j
-            Class.forName("org.slf4j.Logger");
-            logger = new Slf4jLogger(LoggerFactory.getLogger(StackDeobfMod.class));
-        } catch (ClassNotFoundException exception) {
-            logger = new Log4jLogger(LogManager.getLogger(StackDeobfMod.class));
-        }
-        LOGGER = logger;
-    }
+    // slf4j and mojang's logging utilities don't exist in older versions,
+    // so directly use the log4j logger
+    public static final Logger LOGGER = LogManager.getLogger(StackDeobfMod.class);
 
     private CompatUtil() {
     }

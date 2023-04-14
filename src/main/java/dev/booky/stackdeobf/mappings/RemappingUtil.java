@@ -1,7 +1,7 @@
 package dev.booky.stackdeobf.mappings;
 // Created by booky10 in StackDeobfuscator (17:43 17.12.22)
 
-import dev.booky.stackdeobf.compat.CompatUtil;
+import dev.booky.stackdeobf.util.CompatUtil;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.filter.AbstractFilter;
 

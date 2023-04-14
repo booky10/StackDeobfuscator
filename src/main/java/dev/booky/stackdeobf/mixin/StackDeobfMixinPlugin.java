@@ -1,7 +1,7 @@
 package dev.booky.stackdeobf.mixin;
 // Created by booky10 in StackDeobfuscator (21:17 29.03.23)
 
-import dev.booky.stackdeobf.compat.CompatUtil;
+import dev.booky.stackdeobf.util.CompatUtil;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;

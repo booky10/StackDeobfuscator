@@ -19,9 +19,16 @@ public final class StackDeobfConfig {
             .disableHtmlEscaping().setPrettyPrinting()
             .registerTypeAdapter(AbstractMappingProvider.class, MappingProviderSerializer.INSTANCE)
             .create();
+    private static final int CURRENT_VERSION = 2;
+
+    @SerializedName("config-version-dont-touch-this")
+    private int version;
 
     @SerializedName("inject-logger")
-    private boolean logInject;
+    private boolean logInject = true;
+
+    @SerializedName("rewrite-every-log-message")
+    private boolean rewriteEveryLogMessage = false;
 
     @SerializedName("mapping-type")
     private AbstractMappingProvider mappingProvider;
@@ -30,17 +37,32 @@ public final class StackDeobfConfig {
     }
 
     public static StackDeobfConfig load(Path configPath) throws IOException {
+        StackDeobfConfig config;
+
         if (Files.exists(configPath)) {
             try (BufferedReader reader = Files.newBufferedReader(configPath)) {
-                return GSON.fromJson(reader, StackDeobfConfig.class);
+                config = GSON.fromJson(reader, StackDeobfConfig.class);
             }
+
+            if (config.version == CURRENT_VERSION) {
+                // don't need to save the config again, it is
+                // already up-to-date
+                return config;
+            }
+
+            // migrate the config format to the newer version
+
+            if (config.version < 2) {
+                config.rewriteEveryLogMessage = false;
+            }
+        } else {
+            // create default config
+            config = new StackDeobfConfig();
+            config.mappingProvider = new YarnMappingProvider();
         }
 
-        // save default config
-        StackDeobfConfig config = new StackDeobfConfig();
-        config.logInject = true;
-        config.mappingProvider = new YarnMappingProvider();
-
+        // either the config didn't exist before, or the config version was too old
+        config.version = CURRENT_VERSION;
         try (BufferedWriter writer = Files.newBufferedWriter(configPath)) {
             GSON.toJson(config, writer);
         }
@@ -49,6 +71,10 @@ public final class StackDeobfConfig {
 
     public boolean hasLogInjectEnabled() {
         return this.logInject;
+    }
+
+    public boolean shouldRewriteEveryLogMessage() {
+        return this.rewriteEveryLogMessage;
     }
 
     public AbstractMappingProvider getMappingProvider() {

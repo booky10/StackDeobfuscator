@@ -20,13 +20,31 @@ public final class RemappingUtil {
     private RemappingUtil() {
     }
 
-    public static void injectLogFilter(org.apache.logging.log4j.core.Logger logger) {
+    public static void injectLogFilter(org.apache.logging.log4j.core.Logger logger, boolean rewriteMessages) {
         CompatUtil.LOGGER.info("Injecting into root logger...");
         logger.addFilter(new AbstractFilter() {
             @Override
             public Result filter(LogEvent event) {
+                // TODO: this is a horribly hacky way to rewrite messages, find something better
+
                 if (event.getThrown() == null) {
-                    return Result.NEUTRAL;
+                    if (!rewriteMessages) {
+                        return Result.NEUTRAL;
+                    }
+
+                    String message = event.getMessage().getFormattedMessage();
+                    String remappedMessage = RemappingUtil.remapString(message);
+
+                    if (message.equals(remappedMessage)) {
+                        // didn't change anything, continue
+                        return Result.NEUTRAL;
+                    }
+
+                    logger.logIfEnabled(event.getLoggerFqcn(), event.getLevel(), event.getMarker(), remappedMessage);
+
+                    // cancel the underlying event, this needs
+                    // to be rewritten
+                    return Result.DENY;
                 }
 
                 // we need to manually print out the stacktrace, because
@@ -37,7 +55,10 @@ public final class RemappingUtil {
                         RemappingUtil.remapThrowable(event.getThrown()).printStackTrace(writer);
                     }
 
+                    // this message doesn't need to be remapped if every message should be remapped,
+                    // as this is handled by the above logic already
                     logger.logIfEnabled(event.getLoggerFqcn(), event.getLevel(), event.getMarker(), event.getMessage(), null);
+
                     logger.logIfEnabled(event.getLoggerFqcn(), event.getLevel(), event.getMarker(), strWriter.toString());
                 } catch (IOException exception) {
                     throw new RuntimeException(exception);

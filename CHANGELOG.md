@@ -1,11 +1,15 @@
 ## v1.3.2
 
 - Fix exceptions when remapping lambda methods
+- Added optional remapping of every log message
+- Rewrote internal log injection handling
+  - Now uses Log4j's exception rendering
+  - Removed "MC//" prefix in stacktrace, minecraft classes are now suffixed with "`~[client-intermediary.jar:?]`"
 
 ## v1.3.1
 
 - Added support for quilt mappings below 1.19.2
-  - Now goes down to 1.18.2
+    - Now goes down to 1.18.2
 
 ## v1.3.0
 

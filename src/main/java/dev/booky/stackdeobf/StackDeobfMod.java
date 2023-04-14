@@ -3,7 +3,8 @@ package dev.booky.stackdeobf;
 
 import dev.booky.stackdeobf.config.StackDeobfConfig;
 import dev.booky.stackdeobf.mappings.CachedMappings;
-import dev.booky.stackdeobf.mappings.RemappingUtil;
+import dev.booky.stackdeobf.util.CompatUtil;
+import dev.booky.stackdeobf.util.RemappingRewritePolicy;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import org.apache.logging.log4j.LogManager;
@@ -18,7 +19,9 @@ public class StackDeobfMod implements ModInitializer {
         StackDeobfConfig config = this.loadConfig();
 
         if (config.hasLogInjectEnabled()) {
-            RemappingUtil.injectLogFilter((Logger) LogManager.getRootLogger(), config.shouldRewriteEveryLogMessage());
+            CompatUtil.LOGGER.info("Injecting into root logger...");
+            RemappingRewritePolicy policy = new RemappingRewritePolicy(config);
+            policy.inject((Logger) LogManager.getRootLogger());
         }
 
         CachedMappings.init(config.getMappingProvider());

@@ -1,13 +1,6 @@
 package dev.booky.stackdeobf.mappings;
 // Created by booky10 in StackDeobfuscator (17:43 17.12.22)
 
-import dev.booky.stackdeobf.util.CompatUtil;
-import org.apache.logging.log4j.core.LogEvent;
-import org.apache.logging.log4j.core.filter.AbstractFilter;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,57 +13,7 @@ public final class RemappingUtil {
     private RemappingUtil() {
     }
 
-    public static void injectLogFilter(org.apache.logging.log4j.core.Logger logger, boolean rewriteMessages) {
-        CompatUtil.LOGGER.info("Injecting into root logger...");
-        logger.addFilter(new AbstractFilter() {
-            @Override
-            public Result filter(LogEvent event) {
-                // TODO: this is a horribly hacky way to rewrite messages, find something better
-
-                if (event.getThrown() == null) {
-                    if (!rewriteMessages) {
-                        return Result.NEUTRAL;
-                    }
-
-                    String message = event.getMessage().getFormattedMessage();
-                    String remappedMessage = RemappingUtil.remapString(message);
-
-                    if (message.equals(remappedMessage)) {
-                        // didn't change anything, continue
-                        return Result.NEUTRAL;
-                    }
-
-                    logger.logIfEnabled(event.getLoggerFqcn(), event.getLevel(), event.getMarker(), remappedMessage);
-
-                    // cancel the underlying event, this needs
-                    // to be rewritten
-                    return Result.DENY;
-                }
-
-                // we need to manually print out the stacktrace, because
-                // log4j also builds it manually, resulting
-                // in every logged exception being a "RemappedThrowable"
-                try (StringWriter strWriter = new StringWriter()) {
-                    try (PrintWriter writer = new PrintWriter(strWriter)) {
-                        RemappingUtil.remapThrowable(event.getThrown()).printStackTrace(writer);
-                    }
-
-                    // this message doesn't need to be remapped if every message should be remapped,
-                    // as this is handled by the above logic already
-                    logger.logIfEnabled(event.getLoggerFqcn(), event.getLevel(), event.getMarker(), event.getMessage(), null);
-
-                    logger.logIfEnabled(event.getLoggerFqcn(), event.getLevel(), event.getMarker(), strWriter.toString());
-                } catch (IOException exception) {
-                    throw new RuntimeException(exception);
-                }
-
-                // cancel the underlying log event
-                return Result.DENY;
-            }
-        });
-    }
-
-    private static String remapClasses(String string) {
+    public static String remapClasses(String string) {
         return CLASS_PATTERN.matcher(string).replaceAll(result -> {
             int classId = Integer.parseInt(result.group(2));
             String className = CachedMappings.remapClass(classId);
@@ -92,7 +35,7 @@ public final class RemappingUtil {
         });
     }
 
-    private static String remapMethods(String string) {
+    public static String remapMethods(String string) {
         return METHOD_PATTERN.matcher(string).replaceAll(result -> {
             int methodId = Integer.parseInt(result.group(1));
             String methodName = CachedMappings.remapMethod(methodId);
@@ -100,7 +43,7 @@ public final class RemappingUtil {
         });
     }
 
-    private static String remapFields(String string) {
+    public static String remapFields(String string) {
         return FIELD_PATTERN.matcher(string).replaceAll(result -> {
             int fieldId = Integer.parseInt(result.group(1));
             String fieldName = CachedMappings.remapField(fieldId);
@@ -147,7 +90,7 @@ public final class RemappingUtil {
             throwableName = remapClasses(throwableName);
         }
 
-        Throwable remapped = new RemappedThrowable(message, cause, throwableName);
+        Throwable remapped = new RemappedThrowable(message, cause, throwable, throwableName);
         remapped.setStackTrace(stackTrace);
         for (Throwable suppressed : throwable.getSuppressed()) {
             remapped.addSuppressed(remapThrowable(suppressed));
@@ -179,7 +122,16 @@ public final class RemappingUtil {
             methodName = remapMethods(methodName);
         }
 
-        return new StackTraceElement(remappedClass ? "MC" : null, element.getModuleName(), element.getModuleVersion(),
+        String classLoaderName = element.getClassLoaderName();
+        if (remappedClass) {
+            if (classLoaderName == null) {
+                classLoaderName = "MC";
+            } else {
+                classLoaderName += "//MC";
+            }
+        }
+
+        return new StackTraceElement(classLoaderName, element.getModuleName(), element.getModuleVersion(),
                 className, methodName, fileName, element.getLineNumber());
     }
 }

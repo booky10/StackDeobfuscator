@@ -21,22 +21,22 @@ human-readable.
 <summary><b>Before</b></summary>
 
 > ```
-> [18:04:12] [Render thread/ERROR]: Reported exception thrown!
+> [23:13:08] [Render thread/ERROR]: Reported exception thrown!
 > net.minecraft.class_148: Manually triggered debug crash
->     at net.minecraft.class_309.method_1474(class_309.java:509) ~[client-intermediary.jar:?]
->     at net.minecraft.class_310.method_1574(class_310.java:1955) ~[client-intermediary.jar:?]
->     at net.minecraft.class_310.method_1523(class_310.java:1180) ~[client-intermediary.jar:?]
->     at net.minecraft.class_310.method_1514(class_310.java:801) ~[client-intermediary.jar:?]
->     at net.minecraft.client.main.Main.main(Main.java:237) ~[minecraft-1.19.4-client.jar:?]
->     at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:462) ~[fabric-loader-0.14.18.jar:?]
->     at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:74) ~[fabric-loader-0.14.18.jar:?]
->     at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23) ~[fabric-loader-0.14.18.jar:?]
->     at org.prismlauncher.launcher.impl.StandardLauncher.launch(StandardLauncher.java:88) ~[NewLaunch.jar:?]
->     at org.prismlauncher.EntryPoint.listen(EntryPoint.java:126) ~[NewLaunch.jar:?]
->     at org.prismlauncher.EntryPoint.main(EntryPoint.java:71) ~[NewLaunch.jar:?]
+>          at net.minecraft.class_309.method_1474(class_309.java:509) ~[client-intermediary.jar:?]
+>          at net.minecraft.class_310.method_1574(class_310.java:1955) ~[client-intermediary.jar:?]
+>          at net.minecraft.class_310.method_1523(class_310.java:1180) ~[client-intermediary.jar:?]
+>          at net.minecraft.class_310.method_1514(class_310.java:801) ~[client-intermediary.jar:?]
+>          at net.minecraft.client.main.Main.main(Main.java:237) ~[minecraft-1.19.4-client.jar:?]
+>          at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:462) ~[fabric-loader-0.14.18.jar:?]
+>          at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:74) ~[fabric-loader-0.14.18.jar:?]
+>          at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23) ~[fabric-loader-0.14.18.jar:?]
+>          at org.prismlauncher.launcher.impl.StandardLauncher.launch(StandardLauncher.java:88) ~[NewLaunch.jar:?]
+>          at org.prismlauncher.EntryPoint.listen(EntryPoint.java:126) ~[NewLaunch.jar:?]
+>          at org.prismlauncher.EntryPoint.main(EntryPoint.java:71) ~[NewLaunch.jar:?]
 > Caused by: java.lang.Throwable: Manually triggered debug crash
->     at net.minecraft.class_309.method_1474(class_309.java:506) ~[client-intermediary.jar:?]
->     ... 10 more
+>          at net.minecraft.class_309.method_1474(class_309.java:506) ~[client-intermediary.jar:?]
+>          ... 10 more
 > ```
 
 </details>
@@ -44,22 +44,22 @@ human-readable.
 <summary><b>After (yarn/quilt mappings)</b></summary>
 
 > ```
-> [18:02:00] [Render thread/ERROR]: Reported exception thrown!
-> [18:02:00] [Render thread/ERROR]: net.minecraft.util.crash.CrashException: Manually triggered debug crash
->     at MC//net.minecraft.client.Keyboard.pollDebugCrash(Keyboard.java:509)
->     at MC//net.minecraft.client.MinecraftClient.tick(MinecraftClient.java:1955)
->     at MC//net.minecraft.client.MinecraftClient.render(MinecraftClient.java:1180)
->     at MC//net.minecraft.client.MinecraftClient.run(MinecraftClient.java:801)
->     at net.minecraft.client.main.Main.main(Main.java:237)
->     at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:462)
->     at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:74)
->     at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)
->     at org.prismlauncher.launcher.impl.StandardLauncher.launch(StandardLauncher.java:88)
->     at org.prismlauncher.EntryPoint.listen(EntryPoint.java:126)
->     at org.prismlauncher.EntryPoint.main(EntryPoint.java:71)
+> [23:11:25] [Render thread/ERROR]: Reported exception thrown!
+> net.minecraft.util.crash.CrashException: Manually triggered debug crash
+>          at net.minecraft.client.Keyboard.pollDebugCrash(Keyboard.java:509) ~[client-intermediary.jar:?]
+>          at net.minecraft.client.MinecraftClient.tick(MinecraftClient.java:1955) ~[client-intermediary.jar:?]
+>          at net.minecraft.client.MinecraftClient.render(MinecraftClient.java:1180) ~[client-intermediary.jar:?]
+>          at net.minecraft.client.MinecraftClient.run(MinecraftClient.java:801) ~[client-intermediary.jar:?]
+>          at net.minecraft.client.main.Main.main(Main.java:237) ~[minecraft-1.19.4-client.jar:?]
+>          at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:462) ~[fabric-loader-0.14.18.jar:?]
+>          at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:74) ~[fabric-loader-0.14.18.jar:?]
+>          at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23) ~[fabric-loader-0.14.18.jar:?]
+>          at org.prismlauncher.launcher.impl.StandardLauncher.launch(StandardLauncher.java:88) ~[NewLaunch.jar:?]
+>          at org.prismlauncher.EntryPoint.listen(EntryPoint.java:126) ~[NewLaunch.jar:?]
+>          at org.prismlauncher.EntryPoint.main(EntryPoint.java:71) ~[NewLaunch.jar:?]
 > Caused by: java.lang.Throwable: Manually triggered debug crash
->     at MC//net.minecraft.client.Keyboard.pollDebugCrash(Keyboard.java:506)
->     ... 10 more
+>          at net.minecraft.client.Keyboard.pollDebugCrash(Keyboard.java:506) ~[client-intermediary.jar:?]
+>          ... 10 more
 > ```
 
 </details>
@@ -67,22 +67,22 @@ human-readable.
 <summary><b>After (mojang mappings)</b></summary>
 
 > ```
-> [17:52:01] [Render thread/ERROR]: Reported exception thrown!
-> [17:52:01] [Render thread/ERROR]: net.minecraft.ReportedException: Manually triggered debug crash
->     at MC//net.minecraft.client.KeyboardHandler.tick(KeyboardHandler.java:509)
->     at MC//net.minecraft.client.Minecraft.tick(Minecraft.java:1955)
->     at MC//net.minecraft.client.Minecraft.runTick(Minecraft.java:1180)
->     at MC//net.minecraft.client.Minecraft.run(Minecraft.java:801)
->     at net.minecraft.client.main.Main.main(Main.java:237)
->     at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:462)
->     at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:74)
->     at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)
->     at org.prismlauncher.launcher.impl.StandardLauncher.launch(StandardLauncher.java:88)
->     at org.prismlauncher.EntryPoint.listen(EntryPoint.java:126)
->     at org.prismlauncher.EntryPoint.main(EntryPoint.java:71)
+> [23:04:12] [Render thread/ERROR]: Reported exception thrown!
+> net.minecraft.ReportedException: Manually triggered debug crash
+>          at net.minecraft.client.KeyboardHandler.tick(KeyboardHandler.java:509) ~[client-intermediary.jar:?]
+>          at net.minecraft.client.Minecraft.tick(Minecraft.java:1955) ~[client-intermediary.jar:?]
+>          at net.minecraft.client.Minecraft.runTick(Minecraft.java:1180) ~[client-intermediary.jar:?]
+>          at net.minecraft.client.Minecraft.run(Minecraft.java:801) ~[client-intermediary.jar:?]
+>          at net.minecraft.client.main.Main.main(Main.java:237) ~[minecraft-1.19.4-client.jar:?]
+>          at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:462) ~[fabric-loader-0.14.18.jar:?]
+>          at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:74) ~[fabric-loader-0.14.18.jar:?]
+>          at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23) ~[fabric-loader-0.14.18.jar:?]
+>          at org.prismlauncher.launcher.impl.StandardLauncher.launch(StandardLauncher.java:88) ~[NewLaunch.jar:?]
+>          at org.prismlauncher.EntryPoint.listen(EntryPoint.java:126) ~[NewLaunch.jar:?]
+>          at org.prismlauncher.EntryPoint.main(EntryPoint.java:71) ~[NewLaunch.jar:?]
 > Caused by: java.lang.Throwable: Manually triggered debug crash
->     at MC//net.minecraft.client.KeyboardHandler.tick(KeyboardHandler.java:506)
->     ... 10 more
+>          at net.minecraft.client.KeyboardHandler.tick(KeyboardHandler.java:506) ~[client-intermediary.jar:?]
+>          ... 10 more
 > ```
 
 </details>

@@ -1,13 +1,23 @@
 package dev.booky.stackdeobf.mappings;
 // Created by booky10 in StackDeobfuscator (18:03 20.03.23)
 
-class RemappedThrowable extends Throwable {
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
+public class RemappedThrowable extends Throwable {
+
+    private final Throwable original;
     private final String className;
 
-    public RemappedThrowable(String message, Throwable cause, String className) {
+    public RemappedThrowable(String message, Throwable cause,
+                             Throwable original, String className) {
         super(message, cause);
+        this.original = original;
         this.className = className;
+    }
+
+    public Throwable getOriginal() {
+        return this.original;
     }
 
     public String getClassName() {

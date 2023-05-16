@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 public final class RemappingUtil {
 
-    static final Pattern CLASS_PATTERN = Pattern.compile("(net\\.minecraft\\.)?class_(\\d+)");
+    static final Pattern CLASS_PATTERN = Pattern.compile("(net\\.minecraft\\.|net/minecraft/)?class_(\\d+)");
     private static final Pattern METHOD_PATTERN = Pattern.compile("method_(\\d+)");
     private static final Pattern FIELD_PATTERN = Pattern.compile("field_(\\d+)");
 
@@ -21,8 +21,13 @@ public final class RemappingUtil {
                 return result.group();
             }
 
-            if (result.group(1) != null) {
+            String packageName = result.group(1);
+            if (packageName != null) {
                 // a package has been specified, don't remove it
+                if (packageName.indexOf('.') == -1) {
+                    // original package name contains "/" as package separator instead of "."
+                    return className.replace('.', '/');
+                }
                 return className;
             }
 

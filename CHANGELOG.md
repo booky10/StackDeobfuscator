@@ -1,10 +1,16 @@
+## Future Version
+
+- Handle `/` being used instead of `.` as package separator
+    - E.g. `net/minecraft/class_5272` is now remapped correctly
+      to `net/minecraft/client/item/ModelPredicateProviderRegistry`
+
 ## v1.3.2
 
 - Fix exceptions when remapping lambda methods
 - Added optional remapping of every log message
 - Rewrote internal log injection handling
-  - Now uses Log4j's exception rendering
-  - Removed "MC//" prefix in stacktrace, minecraft classes are now suffixed with "`~[client-intermediary.jar:?]`"
+    - Now uses Log4j's exception rendering
+    - Removed "MC//" prefix in stacktrace, minecraft classes are now suffixed with "`~[client-intermediary.jar:?]`"
 
 ## v1.3.1
 

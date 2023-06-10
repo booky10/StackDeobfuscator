@@ -40,9 +40,15 @@ public final class CachedMappings {
                 })
                 // needs to be executed asynchronously, otherwise the
                 // executor of the current thread would be shut down
-                .thenRunAsync(() -> {
+                .handleAsync((res, throwable) -> {
                     CompatUtil.LOGGER.info("Shutting down asynchronous mapping cache executor...");
                     cacheExecutor.shutdown();
+
+                    if (throwable != null) {
+                        CompatUtil.LOGGER.error("An error occurred while creating mappings cache", throwable);
+                    }
+
+                    return null;
                 });
     }
 

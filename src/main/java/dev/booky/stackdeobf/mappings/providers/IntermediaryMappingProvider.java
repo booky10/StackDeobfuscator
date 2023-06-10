@@ -1,9 +1,8 @@
 package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (20:56 30.03.23)
 
-import dev.booky.stackdeobf.http.HttpUtil;
-import dev.booky.stackdeobf.util.CompatUtil;
 import dev.booky.stackdeobf.http.VerifiableUrl;
+import dev.booky.stackdeobf.util.CompatUtil;
 import dev.booky.stackdeobf.util.MavenArtifactInfo;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
@@ -47,17 +46,18 @@ public class IntermediaryMappingProvider extends AbstractMappingProvider {
         }
 
         return MAPPINGS_ARTIFACT.buildVerifiableUrl(CompatUtil.VERSION_ID, "jar", HASH_TYPE, executor)
-                .thenCompose(source -> {
+                .thenCompose(url -> {
                     CompatUtil.LOGGER.info("Downloading intermediary mappings for {}...", CompatUtil.VERSION_ID);
-                    return HttpUtil.getAsync(source, executor).thenAccept(jarBytes -> {
-                        byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
-                        try (OutputStream fileOutput = Files.newOutputStream(this.path);
-                             GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
-                            gzipOutput.write(mappingBytes);
-                        } catch (IOException exception) {
-                            throw new RuntimeException(exception);
-                        }
-                    });
+                    return url.get(executor);
+                })
+                .thenAccept(jarBytes -> {
+                    byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
+                    try (OutputStream fileOutput = Files.newOutputStream(this.path);
+                         GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
+                        gzipOutput.write(mappingBytes);
+                    } catch (IOException exception) {
+                        throw new RuntimeException(exception);
+                    }
                 });
     }
 

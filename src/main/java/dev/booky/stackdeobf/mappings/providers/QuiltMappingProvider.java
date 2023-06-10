@@ -2,7 +2,6 @@ package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (22:06 23.03.23)
 
 import com.google.common.base.Preconditions;
-import dev.booky.stackdeobf.http.HttpUtil;
 import dev.booky.stackdeobf.http.VerifiableUrl;
 import dev.booky.stackdeobf.util.CompatUtil;
 import dev.booky.stackdeobf.util.MavenArtifactInfo;
@@ -71,16 +70,16 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
                 .thenCompose($ -> HASHED_MAPPINGS_ARTIFACT.buildVerifiableUrl(CompatUtil.VERSION_ID, "jar", this.hashType, executor))
                 .thenCompose(hashedUrl -> {
                     CompatUtil.LOGGER.info("Downloading hashed {} mappings for {}...", this.name, CompatUtil.VERSION_ID);
-
-                    return HttpUtil.getAsync(hashedUrl, executor).thenAccept(jarBytes -> {
-                        byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
-                        try (OutputStream fileOutput = Files.newOutputStream(this.hashedPath);
-                             GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
-                            gzipOutput.write(mappingBytes);
-                        } catch (IOException exception) {
-                            throw new RuntimeException(exception);
-                        }
-                    });
+                    return hashedUrl.get(executor);
+                })
+                .thenAccept(jarBytes -> {
+                    byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
+                    try (OutputStream fileOutput = Files.newOutputStream(this.hashedPath);
+                         GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
+                        gzipOutput.write(mappingBytes);
+                    } catch (IOException exception) {
+                        throw new RuntimeException(exception);
+                    }
                 });
     }
 
@@ -92,19 +91,21 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
             return future; // 1.19.2+
         }
 
-        return future.thenCompose($ -> this.intermediary.parseMappings0(executor)).thenRun(() -> {
-            MemoryMappingTree mappings = new MemoryMappingTree();
+        return future
+                .thenCompose($ -> this.intermediary.parseMappings0(executor))
+                .thenRun(() -> {
+                    MemoryMappingTree mappings = new MemoryMappingTree();
 
-            try (InputStream fileInput = Files.newInputStream(this.hashedPath);
-                 GZIPInputStream gzipInput = new GZIPInputStream(fileInput);
-                 Reader reader = new InputStreamReader(gzipInput)) {
-                MappingReader.read(reader, MappingFormat.TINY_2, mappings);
-            } catch (IOException exception) {
-                throw new RuntimeException(exception);
-            }
+                    try (InputStream fileInput = Files.newInputStream(this.hashedPath);
+                         GZIPInputStream gzipInput = new GZIPInputStream(fileInput);
+                         Reader reader = new InputStreamReader(gzipInput)) {
+                        MappingReader.read(reader, MappingFormat.TINY_2, mappings);
+                    } catch (IOException exception) {
+                        throw new RuntimeException(exception);
+                    }
 
-            this.hashedMappings = mappings;
-        });
+                    this.hashedMappings = mappings;
+                });
     }
 
     @Override

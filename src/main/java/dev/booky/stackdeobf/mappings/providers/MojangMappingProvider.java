@@ -4,7 +4,6 @@ package dev.booky.stackdeobf.mappings.providers;
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import dev.booky.stackdeobf.http.HttpUtil;
 import dev.booky.stackdeobf.http.VerifiableUrl;
 import dev.booky.stackdeobf.util.CompatUtil;
 import net.fabricmc.api.EnvType;
@@ -75,7 +74,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
 
         return intermediaryFuture
                 .thenCompose($ -> this.fetchMojangMappingSource(CompatUtil.VERSION_ID, executor))
-                .thenCompose(source -> HttpUtil.getAsync(source, executor))
+                .thenCompose(url -> url.get(executor))
                 .thenAccept(mappingBytes -> {
                     try (OutputStream fileOutput = Files.newOutputStream(this.path);
                          GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
@@ -94,7 +93,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
         // but only if the http method is "HEAD"
 
         return VerifiableUrl.resolveByMd5Header(manifestUri, executor)
-                .thenCompose(url -> HttpUtil.getAsync(url, executor))
+                .thenCompose(url -> url.get(executor))
                 .thenCompose(manifestResp -> {
                     JsonObject manifestObj;
                     try (ByteArrayInputStream input = new ByteArrayInputStream(manifestResp);
@@ -114,7 +113,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
                         String infoSha1 = elementObj.get("sha1").getAsString();
                         VerifiableUrl infoUrl = new VerifiableUrl(rawInfoUrl, VerifiableUrl.HashType.SHA1, infoSha1);
 
-                        return HttpUtil.getAsync(infoUrl, executor).thenApply(infoResp -> {
+                        return infoUrl.get(executor).thenApply(infoResp -> {
                             JsonObject infoObj;
                             try (ByteArrayInputStream input = new ByteArrayInputStream(infoResp);
                                  Reader reader = new InputStreamReader(input)) {

@@ -13,7 +13,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-public final class HttpUtil {
+final class HttpUtil {
 
     private static final Map<Executor, HttpClient> HTTP = new WeakHashMap<>();
 
@@ -24,13 +24,6 @@ public final class HttpUtil {
         synchronized (HTTP) {
             return HTTP.computeIfAbsent(executor, $ -> HttpClient.newBuilder().executor(executor).build());
         }
-    }
-
-    public static CompletableFuture<byte[]> getAsync(VerifiableUrl url, Executor executor) {
-        return getAsync(url.getUrl(), executor).thenApply(bytes -> {
-            url.verifyHash(bytes);
-            return bytes;
-        });
     }
 
     static CompletableFuture<byte[]> getAsync(URI url, Executor executor) {

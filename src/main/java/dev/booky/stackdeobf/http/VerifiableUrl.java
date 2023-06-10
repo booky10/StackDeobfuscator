@@ -75,15 +75,18 @@ public final class VerifiableUrl {
         });
     }
 
-    void verifyHash(byte[] bytes) throws FailedUrlVerificationException {
-        HashCode hashCode = this.hashType.hash(bytes);
-        CompatUtil.LOGGER.info("Verifying {} hash {} for {}...",
-                this.hashType, hashCode, this.uri);
+    public CompletableFuture<byte[]> get(Executor executor) {
+        return HttpUtil.getAsync(this.uri, executor).thenApply(bytes -> {
+            HashCode hashCode = this.hashType.hash(bytes);
+            CompatUtil.LOGGER.info("Verifying {} hash {} for {}...",
+                    this.hashType, hashCode, this.uri);
 
-        if (!hashCode.equals(this.hashCode)) {
-            throw new FailedUrlVerificationException(this.hashType + " hash " + hashCode + " doesn't match "
-                    + this.hashCode + " for " + this.uri);
-        }
+            if (!hashCode.equals(this.hashCode)) {
+                throw new FailedUrlVerificationException(this.hashType + " hash " + hashCode + " doesn't match "
+                        + this.hashCode + " for " + this.uri);
+            }
+            return bytes;
+        });
     }
 
     URI getUrl() {

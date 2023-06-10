@@ -1,7 +1,6 @@
 package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (22:08 23.03.23)
 
-import dev.booky.stackdeobf.http.HttpUtil;
 import dev.booky.stackdeobf.http.VerifiableUrl;
 import dev.booky.stackdeobf.util.CompatUtil;
 import dev.booky.stackdeobf.util.MavenArtifactInfo;
@@ -65,16 +64,16 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
                     return this.artifactInfo.buildVerifiableUrl(build, "jar", this.hashType, executor)
                             .thenCompose(url -> {
                                 CompatUtil.LOGGER.info("Downloading {} mappings jar for build {}...", this.name, build);
-
-                                return HttpUtil.getAsync(url, executor).thenAccept(mappingJarBytes -> {
-                                    byte[] mappingBytes = this.extractPackagedMappings(mappingJarBytes);
-                                    try (OutputStream fileOutput = Files.newOutputStream(this.path);
-                                         GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
-                                        gzipOutput.write(mappingBytes);
-                                    } catch (IOException exception) {
-                                        throw new RuntimeException(exception);
-                                    }
-                                });
+                                return url.get(executor);
+                            })
+                            .thenAccept(mappingJarBytes -> {
+                                byte[] mappingBytes = this.extractPackagedMappings(mappingJarBytes);
+                                try (OutputStream fileOutput = Files.newOutputStream(this.path);
+                                     GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
+                                    gzipOutput.write(mappingBytes);
+                                } catch (IOException exception) {
+                                    throw new RuntimeException(exception);
+                                }
                             });
                 });
     }
@@ -104,7 +103,7 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
 
             return this.artifactInfo.buildVerifiableMetaUrl(this.hashType, executor).thenCompose(metaUrl -> {
                 CompatUtil.LOGGER.info("Fetching latest {} build...", this.name);
-                return HttpUtil.getAsync(metaUrl, executor).thenApply(resp -> {
+                return metaUrl.get(executor).thenApply(resp -> {
                     try (InputStream input = new ByteArrayInputStream(resp)) {
                         Document document;
                         try {

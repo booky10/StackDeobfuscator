@@ -5,8 +5,12 @@ import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import dev.booky.stackdeobf.util.CompatUtil;
+import org.apache.commons.io.FileUtils;
 
 import java.net.URI;
+import java.net.http.HttpRequest;
+import java.util.Base64;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -38,6 +42,36 @@ public final class VerifiableUrl {
             // converted to a string and then parsed to bytes again
             String hashStr = new String(hashStrBytes);
             return new VerifiableUrl(url, hashType, hashStr);
+        });
+    }
+
+    public static CompletableFuture<VerifiableUrl> resolveByMd5Header(URI url, Executor executor) {
+        HttpRequest request = HttpRequest.newBuilder(url)
+                .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                .build();
+        HashType hashType = HashType.MD5;
+
+        CompatUtil.LOGGER.info("Downloading {} hash for {}...", hashType, url);
+        return HttpUtil.getAsyncRaw(request, executor).thenApply(resp -> {
+            byte[] bodyBytes = resp.getRespBody();
+
+            String message = "Received {} bytes ({}) with status {} from {} {} in {}ms";
+            Object[] args = {bodyBytes.length, FileUtils.byteCountToDisplaySize(bodyBytes.length),
+                    resp.getRespCode(), request.method(), url, resp.getDurationMs()};
+
+            if (!HttpUtil.isSuccess(resp.getRespCode())) {
+                CompatUtil.LOGGER.error(message, args);
+                throw new FailedHttpRequestException(resp.getResponse());
+            }
+            CompatUtil.LOGGER.info(message, args);
+
+            // sent by piston-meta server, base64-encoded md5 hash bytes of the response body
+            Optional<String> optMd5Hash = resp.getResponse().headers().firstValue("content-md5");
+            optMd5Hash.orElseThrow(() -> new FailedUrlVerificationException("No expected 'content-md5'"
+                    + " header found for " + url));
+
+            byte[] md5Bytes = Base64.getDecoder().decode(optMd5Hash.get());
+            return new VerifiableUrl(url, hashType, md5Bytes);
         });
     }
 

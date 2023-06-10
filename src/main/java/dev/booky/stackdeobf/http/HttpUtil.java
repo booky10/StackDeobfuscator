@@ -33,32 +33,72 @@ public final class HttpUtil {
         });
     }
 
-    public static CompletableFuture<byte[]> getAsync(URI uri, Executor executor) {
-        HttpRequest request = HttpRequest.newBuilder(uri).build();
-        HttpResponse.BodyHandler<byte[]> handler = HttpResponse.BodyHandlers.ofByteArray();
+    static CompletableFuture<byte[]> getAsync(URI url, Executor executor) {
+        HttpRequest request = HttpRequest.newBuilder(url).build();
+        return getAsyncRaw(request, executor).thenApply(resp -> {
+            byte[] bodyBytes = resp.getRespBody();
 
-        CompatUtil.LOGGER.info("Requesting {}...", uri);
-        long start = System.currentTimeMillis();
-
-        return getHttpClient(executor).sendAsync(request, handler).thenApplyAsync(resp -> {
-            long timeDiff = System.currentTimeMillis() - start;
-            byte[] bodyBytes = resp.body();
-
-            String message = "Received {} bytes ({}) with status {} from {} in {}ms";
+            String message = "Received {} bytes ({}) with status {} from {} {} in {}ms";
             Object[] args = {bodyBytes.length, FileUtils.byteCountToDisplaySize(bodyBytes.length),
-                    resp.statusCode(), uri, timeDiff};
+                    resp.getRespCode(), request.method(), url, resp.getDurationMs()};
 
-            if (!isSuccess(resp.statusCode())) {
+            if (!isSuccess(resp.getRespCode())) {
                 CompatUtil.LOGGER.error(message, args);
-                throw new FailedHttpRequestException(resp);
+                throw new FailedHttpRequestException(resp.getResponse());
             }
-
             CompatUtil.LOGGER.info(message, args);
             return bodyBytes;
-        }, executor);
+        });
     }
 
-    private static boolean isSuccess(int code) {
+    static CompletableFuture<RawHttpResponse> getAsyncRaw(HttpRequest request, Executor executor) {
+        HttpResponse.BodyHandler<byte[]> handler = HttpResponse.BodyHandlers.ofByteArray();
+
+        CompatUtil.LOGGER.info("Requesting {}...", request.uri());
+        long start = System.currentTimeMillis();
+
+        return getHttpClient(executor)
+                .sendAsync(request, handler)
+                .thenApplyAsync(resp -> {
+                    long timeDiff = System.currentTimeMillis() - start;
+                    return new RawHttpResponse(request, resp, timeDiff);
+                }, executor);
+    }
+
+    static boolean isSuccess(int code) {
         return code >= 200 && code <= 299;
+    }
+
+    static final class RawHttpResponse {
+
+        private final HttpRequest request;
+        private final HttpResponse<byte[]> response;
+        private final long durationMs;
+
+        public RawHttpResponse(HttpRequest request, HttpResponse<byte[]> response, long durationMs) {
+            this.request = request;
+            this.response = response;
+            this.durationMs = durationMs;
+        }
+
+        public HttpRequest getRequest() {
+            return this.request;
+        }
+
+        public HttpResponse<byte[]> getResponse() {
+            return this.response;
+        }
+
+        public long getDurationMs() {
+            return this.durationMs;
+        }
+
+        public byte[] getRespBody() {
+            return this.response.body();
+        }
+
+        public int getRespCode() {
+            return this.response.statusCode();
+        }
     }
 }

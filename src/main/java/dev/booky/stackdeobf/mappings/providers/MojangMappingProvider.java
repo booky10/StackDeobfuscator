@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.booky.stackdeobf.http.HttpUtil;
+import dev.booky.stackdeobf.http.VerifiableUrl;
 import dev.booky.stackdeobf.util.CompatUtil;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
@@ -72,8 +73,8 @@ public class MojangMappingProvider extends AbstractMappingProvider {
             return intermediaryFuture;
         }
 
-        return intermediaryFuture.thenCompose($ -> this.fetchMojangMappingsUri(CompatUtil.VERSION_ID, executor)
-                .thenCompose(uri -> HttpUtil.getAsync(uri, executor))
+        return intermediaryFuture.thenCompose($ -> this.fetchMojangMappingSource(CompatUtil.VERSION_ID, executor)
+                .thenCompose(source -> HttpUtil.getAsync(source, executor))
                 .thenAccept(mappingBytes -> {
                     try (OutputStream fileOutput = Files.newOutputStream(this.path);
                          GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
@@ -84,8 +85,15 @@ public class MojangMappingProvider extends AbstractMappingProvider {
                 }));
     }
 
-    private CompletableFuture<URI> fetchMojangMappingsUri(String mcVersion, Executor executor) {
-        URI manifestUri = URI.create(System.getProperty("stackdeobf.manifest-uri", "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"));
+    private CompletableFuture<VerifiableUrl> fetchMojangMappingSource(String mcVersion, Executor executor) {
+        URI manifestUri = URI.create(System.getProperty("stackdeobf.manifest-uri",
+                "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"));
+
+        // I don't see a simple way to integrate verification of the received manifest content
+        //
+        // the server sends a "Content-Md5" header containing a md5 hash encoded as a base64-string,
+        // but this current http setup doesn't allow for easy access to the headers
+
         return HttpUtil.getAsync(manifestUri, executor).thenCompose(manifestResp -> {
             JsonObject manifestObj;
             try (ByteArrayInputStream input = new ByteArrayInputStream(manifestResp);
@@ -101,8 +109,11 @@ public class MojangMappingProvider extends AbstractMappingProvider {
                     continue;
                 }
 
-                URI infoUri = URI.create(elementObj.get("url").getAsString());
-                return HttpUtil.getAsync(infoUri, executor).thenApply(infoResp -> {
+                URI rawInfoUrl = URI.create(elementObj.get("url").getAsString());
+                String infoSha1 = elementObj.get("sha1").getAsString();
+                VerifiableUrl infoUrl = new VerifiableUrl(rawInfoUrl, VerifiableUrl.HashType.SHA1, infoSha1);
+
+                return HttpUtil.getAsync(infoUrl, executor).thenApply(infoResp -> {
                     JsonObject infoObj;
                     try (ByteArrayInputStream input = new ByteArrayInputStream(infoResp);
                          Reader reader = new InputStreamReader(input)) {
@@ -114,10 +125,12 @@ public class MojangMappingProvider extends AbstractMappingProvider {
                     EnvType env = FabricLoader.getInstance().getEnvironmentType();
                     String envName = env.name().toLowerCase(Locale.ROOT);
 
-                    return URI.create(infoObj
+                    JsonObject mappingsData = infoObj
                             .getAsJsonObject("downloads")
-                            .getAsJsonObject(envName + "_mappings")
-                            .get("url").getAsString());
+                            .getAsJsonObject(envName + "_mappings");
+                    URI rawMappingsUrl = URI.create(mappingsData.get("url").getAsString());
+                    String mappingsSha1 = mappingsData.get("sha1").getAsString();
+                    return new VerifiableUrl(rawMappingsUrl, VerifiableUrl.HashType.SHA1, mappingsSha1);
                 });
             }
 

@@ -3,6 +3,7 @@ package dev.booky.stackdeobf.mappings.providers;
 
 import dev.booky.stackdeobf.http.HttpUtil;
 import dev.booky.stackdeobf.util.CompatUtil;
+import dev.booky.stackdeobf.http.VerifiableUrl;
 import dev.booky.stackdeobf.util.MavenArtifactInfo;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
@@ -14,7 +15,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
@@ -27,6 +27,9 @@ public class IntermediaryMappingProvider extends AbstractMappingProvider {
     private static final String REPO_URL = System.getProperty("stackdeobf.intermediary.repo-url", "https://maven.fabricmc.net");
     private static final MavenArtifactInfo MAPPINGS_ARTIFACT = MavenArtifactInfo.parse(REPO_URL,
             System.getProperty("stackdeobf.intermediary.mappings-artifact", "net.fabricmc:intermediary:v2"));
+
+    // even though yarn didn't have sha512 at the time, intermediary did
+    private static final VerifiableUrl.HashType HASH_TYPE = VerifiableUrl.HashType.SHA512;
 
     private Path path;
     private MemoryMappingTree mappings;
@@ -43,18 +46,19 @@ public class IntermediaryMappingProvider extends AbstractMappingProvider {
             return CompletableFuture.completedFuture(null);
         }
 
-        URI uri = MAPPINGS_ARTIFACT.buildUri(CompatUtil.VERSION_ID, "jar");
-        CompatUtil.LOGGER.info("Downloading intermediary mappings for {}...", CompatUtil.VERSION_ID);
-
-        return HttpUtil.getAsync(uri, executor).thenAccept(jarBytes -> {
-            byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
-            try (OutputStream fileOutput = Files.newOutputStream(this.path);
-                 GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
-                gzipOutput.write(mappingBytes);
-            } catch (IOException exception) {
-                throw new RuntimeException(exception);
-            }
-        });
+        return MAPPINGS_ARTIFACT.buildVerifiableUrl(CompatUtil.VERSION_ID, "jar", HASH_TYPE, executor)
+                .thenCompose(source -> {
+                    CompatUtil.LOGGER.info("Downloading intermediary mappings for {}...", CompatUtil.VERSION_ID);
+                    return HttpUtil.getAsync(source, executor).thenAccept(jarBytes -> {
+                        byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
+                        try (OutputStream fileOutput = Files.newOutputStream(this.path);
+                             GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
+                            gzipOutput.write(mappingBytes);
+                        } catch (IOException exception) {
+                            throw new RuntimeException(exception);
+                        }
+                    });
+                });
     }
 
     @Override

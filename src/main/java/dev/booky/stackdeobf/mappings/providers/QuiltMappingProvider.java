@@ -3,6 +3,7 @@ package dev.booky.stackdeobf.mappings.providers;
 
 import com.google.common.base.Preconditions;
 import dev.booky.stackdeobf.http.HttpUtil;
+import dev.booky.stackdeobf.http.VerifiableUrl;
 import dev.booky.stackdeobf.util.CompatUtil;
 import dev.booky.stackdeobf.util.MavenArtifactInfo;
 import net.fabricmc.mappingio.MappingReader;
@@ -17,7 +18,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
@@ -46,7 +46,7 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
     private MemoryMappingTree hashedMappings;
 
     public QuiltMappingProvider() {
-        super("quilt", MAPPINGS_ARTIFACT);
+        super("quilt", MAPPINGS_ARTIFACT, VerifiableUrl.HashType.SHA512);
         Preconditions.checkState(CompatUtil.WORLD_VERSION >= 2975, "Quilt mappings are only supported for 1.18.2 and higher");
     }
 
@@ -67,18 +67,21 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
             return future;
         }
 
-        URI hashedUri = HASHED_MAPPINGS_ARTIFACT.buildUri(CompatUtil.VERSION_ID, "jar");
-        CompatUtil.LOGGER.info("Downloading hashed {} mappings for {}...", this.name, CompatUtil.VERSION_ID);
+        return future
+                .thenCompose($ -> HASHED_MAPPINGS_ARTIFACT.buildVerifiableUrl(CompatUtil.VERSION_ID, "jar", this.hashType, executor))
+                .thenCompose(hashedUrl -> {
+                    CompatUtil.LOGGER.info("Downloading hashed {} mappings for {}...", this.name, CompatUtil.VERSION_ID);
 
-        return future.thenCompose($ -> HttpUtil.getAsync(hashedUri, executor).thenAccept(jarBytes -> {
-            byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
-            try (OutputStream fileOutput = Files.newOutputStream(this.hashedPath);
-                 GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
-                gzipOutput.write(mappingBytes);
-            } catch (IOException exception) {
-                throw new RuntimeException(exception);
-            }
-        }));
+                    return HttpUtil.getAsync(hashedUrl, executor).thenAccept(jarBytes -> {
+                        byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
+                        try (OutputStream fileOutput = Files.newOutputStream(this.hashedPath);
+                             GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
+                            gzipOutput.write(mappingBytes);
+                        } catch (IOException exception) {
+                            throw new RuntimeException(exception);
+                        }
+                    });
+                });
     }
 
     @Override

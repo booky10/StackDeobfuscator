@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
 
 public final class HttpUtil {
 
@@ -27,16 +26,11 @@ public final class HttpUtil {
         }
     }
 
-    public static byte[] getSync(URI uri) {
-        return getSync(uri, ForkJoinPool.commonPool());
-    }
-
-    public static byte[] getSync(URI uri, Executor executor) {
-        return getAsync(uri, executor).join();
-    }
-
-    public static CompletableFuture<byte[]> getAsync(URI uri) {
-        return getAsync(uri, ForkJoinPool.commonPool());
+    public static CompletableFuture<byte[]> getAsync(VerifiableUrl url, Executor executor) {
+        return getAsync(url.getUrl(), executor).thenApply(bytes -> {
+            url.verifyHash(bytes);
+            return bytes;
+        });
     }
 
     public static CompletableFuture<byte[]> getAsync(URI uri, Executor executor) {

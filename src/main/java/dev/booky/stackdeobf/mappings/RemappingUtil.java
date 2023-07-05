@@ -18,7 +18,7 @@ public final class RemappingUtil {
             int classId = Integer.parseInt(result.group(2));
             String className = CachedMappings.remapClass(classId);
             if (className == null) {
-                return result.group();
+                return Matcher.quoteReplacement(result.group());
             }
 
             String packageName = result.group(1);
@@ -26,17 +26,16 @@ public final class RemappingUtil {
                 // a package has been specified, don't remove it
                 if (packageName.indexOf('.') == -1) {
                     // original package name contains "/" as package separator instead of "."
-                    return className.replace('.', '/');
+                    className = className.replace('.', '/');
                 }
-                return className;
+            } else {
+                // no package in original string, remove it
+                int packageIndex = className.lastIndexOf('.');
+                if (packageIndex != -1) {
+                    className = className.substring(packageIndex + 1);
+                }
             }
-
-            // no package in original string, remove it
-            int packageIndex = className.lastIndexOf('.');
-            if (packageIndex != -1) {
-                className = className.substring(packageIndex + 1);
-            }
-            return className;
+            return Matcher.quoteReplacement(className);
         });
     }
 
@@ -44,7 +43,7 @@ public final class RemappingUtil {
         return METHOD_PATTERN.matcher(string).replaceAll(result -> {
             int methodId = Integer.parseInt(result.group(1));
             String methodName = CachedMappings.remapMethod(methodId);
-            return methodName == null ? result.group() : Matcher.quoteReplacement(methodName);
+            return Matcher.quoteReplacement(methodName == null ? result.group() : methodName);
         });
     }
 
@@ -52,7 +51,7 @@ public final class RemappingUtil {
         return FIELD_PATTERN.matcher(string).replaceAll(result -> {
             int fieldId = Integer.parseInt(result.group(1));
             String fieldName = CachedMappings.remapField(fieldId);
-            return fieldName == null ? result.group() : fieldName;
+            return Matcher.quoteReplacement(fieldName == null ? result.group() : fieldName);
         });
     }
 

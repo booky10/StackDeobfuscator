@@ -113,19 +113,38 @@ public final class ApiRoutes {
             throw new BadRequestResponse("Illegal url specified: " + exception);
         }
 
-        return this.getMappings(ctx)
-                .thenCompose(mappings -> this.urlCache.get(uri)
-                        .thenAccept(bytes -> {
-                            String str = new String(bytes);
-                            String remappedStr = mappings.remapString(str);
-                            ctx.result(remappedStr);
-                        }));
+        long startStep = System.nanoTime();
+        return this.getMappings(ctx).thenCompose(mappings -> {
+            long urlStep = System.nanoTime();
+            ctx.header("Mappings-Time", Long.toString(urlStep - startStep));
+
+            return this.urlCache.get(uri).thenAccept(bytes -> {
+                long remapStep = System.nanoTime();
+                ctx.header("Url-Time", Long.toString(remapStep - urlStep));
+
+                String str = new String(bytes);
+                String remappedStr = mappings.remapString(str);
+                ctx.result(remappedStr);
+
+                long resultStep = System.nanoTime();
+                ctx.header("Remap-Time", Long.toString(resultStep - remapStep));
+                ctx.header("Total-Time", Long.toString(resultStep - startStep));
+            });
+        });
     }
 
     private CompletableFuture<?> handleDeobfBodyReq(Context ctx) {
+        long startStep = System.nanoTime();
         return this.getMappings(ctx).thenAccept(mappings -> {
+            long remapStep = System.nanoTime();
+            ctx.header("Mappings-Time", Long.toString(remapStep - startStep));
+
             String remappedStr = mappings.remapString(ctx.body());
             ctx.result(remappedStr);
+
+            long resultStep = System.nanoTime();
+            ctx.header("Remap-Time", Long.toString(resultStep - remapStep));
+            ctx.header("Total-Time", Long.toString(resultStep - startStep));
         });
     }
 

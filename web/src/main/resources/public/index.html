@@ -21,6 +21,28 @@
                   placeholder="Insert Stacktrace here" rows="42"></textarea>
     </div>
 
+    <label>
+        Mappings:
+        <select id="mappings">
+            <option value="yarn">Yarn</option>
+            <option value="quilt">Quilt</option>
+            <option value="mojang">Mojang</option>
+        </select>
+    </label>
+    <label>
+        Version:
+        <select id="version">
+            <option value="-1">Loading...</option>
+        </select>
+    </label>
+    <label style="padding-bottom: 1em;">
+        Environment:
+        <select id="environment">
+            <option value="client">Client</option>
+            <option value="server">Server</option>
+        </select>
+    </label>
+
     <div>
         <button id="deobfuscate">Deobfuscate</button>
         <button id="copy">Copy</button>

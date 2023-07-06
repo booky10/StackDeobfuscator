@@ -50,7 +50,7 @@ function tryFixInputUrl() {
 
 function loadVersions() {
     const req = new XMLHttpRequest();
-    req.open("GET", "/mc_versions.json", true);
+    req.open("GET", `/mc_versions.json?t=${Date.now()}`, true);
     req.onreadystatechange = () => {
         if (req.readyState != 4) {
             return;

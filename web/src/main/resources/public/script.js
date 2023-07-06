@@ -11,6 +11,43 @@ const mappingsSelect = document.getElementById("mappings");
 const versionSelect = document.getElementById("version");
 const environmentSelect = document.getElementById("environment");
 
+// fixes the input url by trying to get the raw content instead of the html webpage
+function tryFixInputUrl() {
+    if (urlInput.value.length == 0) {
+        return;
+    }
+
+    const url = new URL(urlInput.value);
+    if (url.host.endsWith("mclo.gs") && url.host !== "api.mclo.gs") {
+        url.host = "api.mclo.gs";
+        url.pathname = "/1/raw" + url.pathname;
+    } else if (url.host.endsWith("pastes.dev") && url.host !== "api.pastes.dev") {
+        // can't just remap to raw pathname, like all other paste sites
+        // swapping hosts is just as easy though
+        url.host = "api.pastes.dev";
+    } else if (url.host.endsWith("paste.ee")) {
+        // getting the raw text from paste.ee is as simple as swapping "/p/<id>" for "/d/<id>"
+        if (!url.pathname.startsWith("/d") && url.pathname.startsWith("/p")) {
+            url.pathname = "/d" + url.pathname.substring("/p".length);
+        }
+    } else if (
+            // all haste-servers (before being bought by toptal) and pastebin
+            // support simply adding "/raw" at the front of the path
+            (url.host.startsWith("haste") || url.host.startsWith("paste"))
+            // after toptal bought hastebin.com they completely destroyed the ability to
+            // change the pathname to get the raw file content... thanks?
+            && !url.host.endsWith("toptal.com") && !url.host.endsWith("hastebin.com")
+            // same for paste.gg, only that they weren't bought by toptal and support multiple files
+            && !url.host.endsWith("paste.gg")) {
+        if (!url.pathname.startsWith("/raw")) {
+            url.pathname = "/raw" + url.pathname;
+        }
+    }
+    // don't want to add support for github gist, too complicated with multiple files
+
+    urlInput.value = url.toString();
+}
+
 function loadVersions() {
     const req = new XMLHttpRequest();
     req.open("GET", "/mc_versions.json", true);
@@ -36,6 +73,8 @@ function loadVersions() {
 }
 
 function deobfuscate() {
+    tryFixInputUrl();
+
     const mappings = mappingsSelect.options[mappingsSelect.selectedIndex].value;
     const version = versionSelect.options[versionSelect.selectedIndex].value;
     const environment = environmentSelect.options[environmentSelect.selectedIndex].value;

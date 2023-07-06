@@ -1,4 +1,6 @@
 const input = document.getElementById("input");
+const urlInput = document.getElementById("urlinput");
+
 const status = document.getElementById("status");
 const message = document.getElementById("message");
 
@@ -14,7 +16,7 @@ function loadVersions() {
     req.open("GET", "/mc_versions.json", true);
     req.onreadystatechange = () => {
         if (req.readyState != 4) {
-          return;
+            return;
         }
 
         const versions = JSON.parse(req.responseText);
@@ -38,23 +40,30 @@ function deobfuscate() {
     const version = versionSelect.options[versionSelect.selectedIndex].value;
     const environment = environmentSelect.options[environmentSelect.selectedIndex].value;
 
-    input.disabled = true;
     status.innerText = "Deobfuscating...";
     message.innerText = "";
 
+    input.disabled = true;
+    urlInput.disabled = true;
     copyButton.disabled = true;
     deobfButton.disabled = true;
+    mappingsSelect.disabled = true;
+    versionSelect.disabled = true;
+    environmentSelect.disabled = true;
 
     const req = new XMLHttpRequest();
-    req.open("POST", `/api/v1/deobf/body?mappings=${mappings}&version=${version}&environment=${environment}`, true);
     req.onreadystatechange = () => {
         if (req.readyState != 4) {
             return;
         }
 
         input.disabled = false;
+        urlInput.disabled = false;
         copyButton.disabled = false;
         deobfButton.disabled = false;
+        mappingsSelect.disabled = false;
+        versionSelect.disabled = false;
+        environmentSelect.disabled = false;
 
         const totalTime = (req.getResponseHeader("Total-Time") / 1000000).toFixed(2);
 
@@ -71,9 +80,23 @@ function deobfuscate() {
         input.value = req.responseText;
     };
 
-    req.setRequestHeader("Content-Type", "text/plain");
-    req.setRequestHeader("Accept", "text/plain");
-    req.send(input.value);
+    const setHeaders = () => {
+        // these require an open request, so just do this
+        req.setRequestHeader("Content-Type", "text/plain");
+        req.setRequestHeader("Accept", "text/plain");
+    };
+
+    const reqParams = `mappings=${mappings}&version=${version}&environment=${environment}`;
+    if (urlInput.value.length == 0) {
+        req.open("POST", `/api/v1/deobf/body?${reqParams}`, true);
+        setHeaders();
+        req.send(input.value);
+    } else {
+        const url = encodeURIComponent(urlInput.value);
+        req.open("GET", `/api/v1/deobf/url?${reqParams}&url=${url}`, true);
+        setHeaders();
+        req.send();
+    }
 }
 
 copyButton.onclick = () => {

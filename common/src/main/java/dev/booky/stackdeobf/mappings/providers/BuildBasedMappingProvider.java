@@ -2,8 +2,8 @@ package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (22:08 23.03.23)
 
 import dev.booky.stackdeobf.http.HttpUtil;
-import dev.booky.stackdeobf.util.CompatUtil;
 import dev.booky.stackdeobf.util.MavenArtifactInfo;
+import dev.booky.stackdeobf.util.VersionData;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
 import net.fabricmc.mappingio.format.MappingFormat;
@@ -36,15 +36,16 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
     protected Path path;
     protected MemoryMappingTree mappings;
 
-    public BuildBasedMappingProvider(String name, MavenArtifactInfo artifactInfo) {
-        super(name);
+    public BuildBasedMappingProvider(VersionData versionData, String name, MavenArtifactInfo artifactInfo) {
+        super(versionData, name);
         this.artifactInfo = artifactInfo;
     }
 
     @Override
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
         // after 1.14.2, fabric switched to using the version id instead of the name for yarn versions
-        String version = CompatUtil.WORLD_VERSION >= 1963 ? CompatUtil.VERSION_ID : CompatUtil.VERSION_NAME;
+        String version = this.versionData.getWorldVersion() >= 1963
+                ? this.versionData.getId() : this.versionData.getName();
 
         // versions somewhere before mojang mappings (I don't have decompiled mc versions
         // before mojang mappings) include the current commit hash in the version.json name
@@ -56,12 +57,12 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
 
                     // already cached, don't download anything
                     if (Files.exists(this.path)) {
-                        CompatUtil.LOGGER.info("Mappings for {} build {} are already downloaded", this.name, build);
+                        LOGGER.info("Mappings for {} build {} are already downloaded", this.name, build);
                         return CompletableFuture.completedFuture(null);
                     }
 
                     URI uri = this.artifactInfo.buildUri(build, "jar");
-                    CompatUtil.LOGGER.info("Downloading {} mappings jar for build {}...", this.name, build);
+                    LOGGER.info("Downloading {} mappings jar for build {}...", this.name, build);
 
                     return HttpUtil.getAsync(uri, executor).thenAccept(mappingJarBytes -> {
                         byte[] mappingBytes = this.extractPackagedMappings(mappingJarBytes);
@@ -86,11 +87,11 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
                     long maxTimeDiff = Long.getLong("stackdeobf.build-refresh-cooldown", 2 * 24 * 60 /* specified in minutes */);
                     if (timeDiff <= maxTimeDiff) {
                         // latest build has already been fetched in the last x minutes (default: 2 days)
-                        CompatUtil.LOGGER.info("Latest build for {} is already cached ({} hour(s) ago, refresh in {} hour(s))",
+                        LOGGER.info("Latest build for {} is already cached ({} hour(s) ago, refresh in {} hour(s))",
                                 this.name, (long) Math.floor(timeDiff / 60d), (long) Math.ceil((maxTimeDiff - timeDiff) / 60d));
                         return CompletableFuture.completedFuture(Files.readString(versionCachePath).trim());
                     } else {
-                        CompatUtil.LOGGER.info("Refreshing latest {} build (last refresh was {} hour(s) ago)...",
+                        LOGGER.info("Refreshing latest {} build (last refresh was {} hour(s) ago)...",
                                 this.name, (long) Math.ceil(timeDiff / 60d));
                     }
                 } catch (IOException exception) {
@@ -99,7 +100,7 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
             }
 
             URI metaUri = this.artifactInfo.buildMetaUri();
-            CompatUtil.LOGGER.info("Fetching latest {} build...", this.name);
+            LOGGER.info("Fetching latest {} build...", this.name);
 
             return HttpUtil.getAsync(metaUri, executor).thenApply(resp -> {
                 try (InputStream input = new ByteArrayInputStream(resp)) {
@@ -129,7 +130,7 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
                         }
 
                         Files.writeString(versionCachePath, version);
-                        CompatUtil.LOGGER.info("Cached latest {} build version: {}", this.name, version);
+                        LOGGER.info("Cached latest {} build version: {}", this.name, version);
 
                         return version;
                     }

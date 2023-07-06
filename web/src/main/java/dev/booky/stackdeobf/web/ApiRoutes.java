@@ -3,15 +3,17 @@ package dev.booky.stackdeobf.web;
 
 import dev.booky.stackdeobf.http.HttpUtil;
 import dev.booky.stackdeobf.mappings.CachedMappings;
-import dev.booky.stackdeobf.util.CompatUtil;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
 import java.util.Objects;
 
 public final class ApiRoutes {
 
+    private static final Logger LOGGER = LogManager.getLogger("StackDeobfuscator");
     private static final String PREFIX = "/api/v1";
 
     private ApiRoutes() {
@@ -26,7 +28,7 @@ public final class ApiRoutes {
         URI uri = URI.create(Objects.requireNonNull(ctx.queryParam("url")));
         HttpUtil.getAsync(uri).handle((bytes, throwable) -> {
             if (throwable != null) {
-                CompatUtil.LOGGER.error("Error while deobfuscating text from {}", uri, throwable);
+                LOGGER.error("Error while deobfuscating text from {}", uri, throwable);
                 ctx.status(500);
             }
 

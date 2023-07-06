@@ -2,8 +2,8 @@ package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (20:56 30.03.23)
 
 import dev.booky.stackdeobf.http.HttpUtil;
-import dev.booky.stackdeobf.util.CompatUtil;
 import dev.booky.stackdeobf.util.MavenArtifactInfo;
+import dev.booky.stackdeobf.util.VersionData;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
 import net.fabricmc.mappingio.format.MappingFormat;
@@ -32,19 +32,19 @@ public class IntermediaryMappingProvider extends AbstractMappingProvider {
     private MemoryMappingTree mappings;
 
     // only used as a conversion step (mojang + hashed quilt)
-    IntermediaryMappingProvider() {
-        super("intermediary");
+    IntermediaryMappingProvider(VersionData versionData) {
+        super(versionData, "intermediary");
     }
 
     @Override
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
-        this.path = cacheDir.resolve("intermediary_" + CompatUtil.VERSION_ID + ".gz");
+        this.path = cacheDir.resolve("intermediary_" + this.versionData.getId() + ".gz");
         if (Files.exists(this.path)) {
             return CompletableFuture.completedFuture(null);
         }
 
-        URI uri = MAPPINGS_ARTIFACT.buildUri(CompatUtil.VERSION_ID, "jar");
-        CompatUtil.LOGGER.info("Downloading intermediary mappings for {}...", CompatUtil.VERSION_ID);
+        URI uri = MAPPINGS_ARTIFACT.buildUri(this.versionData.getId(), "jar");
+        LOGGER.info("Downloading intermediary mappings for {}...", this.versionData.getId());
 
         return HttpUtil.getAsync(uri, executor).thenAccept(jarBytes -> {
             byte[] mappingBytes = this.extractPackagedMappings(jarBytes);

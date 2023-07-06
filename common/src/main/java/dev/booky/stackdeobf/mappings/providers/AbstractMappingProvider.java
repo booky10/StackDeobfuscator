@@ -2,8 +2,10 @@ package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (14:35 23.03.23)
 
 import com.google.common.base.Preconditions;
-import dev.booky.stackdeobf.util.CompatUtil;
+import dev.booky.stackdeobf.util.VersionData;
 import net.fabricmc.mappingio.MappingVisitor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -15,9 +17,13 @@ import java.util.concurrent.Executor;
 
 public abstract class AbstractMappingProvider {
 
+    protected static final Logger LOGGER = LogManager.getLogger("StackDeobfuscator");
+
+    protected final VersionData versionData;
     protected final String name;
 
-    protected AbstractMappingProvider(String name) {
+    protected AbstractMappingProvider(VersionData versionData, String name) {
+        this.versionData = versionData;
         this.name = name;
     }
 
@@ -72,21 +78,21 @@ public abstract class AbstractMappingProvider {
     }
 
     private CompletableFuture<Void> downloadMappings(Path cacheDir, Executor executor) {
-        CompatUtil.LOGGER.info("Verifying cache of {} mappings...", this.name);
+        LOGGER.info("Verifying cache of {} mappings...", this.name);
         return this.trackTime(this.downloadMappings0(cacheDir, executor)).thenAccept(timeDiff ->
-                CompatUtil.LOGGER.info("Verified cache of {} mappings (took {}ms)", this.name, timeDiff));
+                LOGGER.info("Verified cache of {} mappings (took {}ms)", this.name, timeDiff));
     }
 
     private CompletableFuture<Void> parseMappings(Executor executor) {
-        CompatUtil.LOGGER.info("Parsing {} mappings...", this.name);
+        LOGGER.info("Parsing {} mappings...", this.name);
         return this.trackTime(this.parseMappings0(executor)).thenAccept(timeDiff ->
-                CompatUtil.LOGGER.info("Parsed {} mappings (took {}ms)", this.name, timeDiff));
+                LOGGER.info("Parsed {} mappings (took {}ms)", this.name, timeDiff));
     }
 
     private CompletableFuture<Void> visitMappings(MappingVisitor visitor, Executor executor) {
-        CompatUtil.LOGGER.info("Caching {} mappings...", this.name);
+        LOGGER.info("Caching {} mappings...", this.name);
         return this.trackTime(this.visitMappings0(visitor, executor)).thenAccept(timeDiff ->
-                CompatUtil.LOGGER.info("Cached {} mappings (took {}ms)", this.name, timeDiff));
+                LOGGER.info("Cached {} mappings (took {}ms)", this.name, timeDiff));
     }
 
     protected abstract CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor);

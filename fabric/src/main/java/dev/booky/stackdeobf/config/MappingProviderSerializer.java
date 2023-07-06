@@ -14,6 +14,7 @@ import dev.booky.stackdeobf.mappings.providers.CustomMappingProvider;
 import dev.booky.stackdeobf.mappings.providers.MojangMappingProvider;
 import dev.booky.stackdeobf.mappings.providers.QuiltMappingProvider;
 import dev.booky.stackdeobf.mappings.providers.YarnMappingProvider;
+import dev.booky.stackdeobf.util.VersionData;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.mappingio.format.MappingFormat;
@@ -22,11 +23,12 @@ import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.util.Locale;
 
-public class MappingProviderSerializer implements JsonSerializer<AbstractMappingProvider>, JsonDeserializer<AbstractMappingProvider> {
+public final class MappingProviderSerializer implements JsonSerializer<AbstractMappingProvider>, JsonDeserializer<AbstractMappingProvider> {
 
-    public static final MappingProviderSerializer INSTANCE = new MappingProviderSerializer();
+    private final VersionData versionData;
 
-    private MappingProviderSerializer() {
+    public MappingProviderSerializer(VersionData versionData) {
+        this.versionData = versionData;
     }
 
     @Override
@@ -35,7 +37,7 @@ public class MappingProviderSerializer implements JsonSerializer<AbstractMapping
             JsonObject obj = json.getAsJsonObject();
             Path path = Path.of(obj.get("path").getAsString());
             MappingFormat format = ctx.deserialize(obj.get("mapping-format"), MappingFormat.class);
-            return new CustomMappingProvider(path, format);
+            return new CustomMappingProvider(this.versionData, path, format);
         }
 
         EnvType env = FabricLoader.getInstance().getEnvironmentType();
@@ -43,9 +45,9 @@ public class MappingProviderSerializer implements JsonSerializer<AbstractMapping
 
         String id = json.getAsString().trim().toLowerCase(Locale.ROOT);
         return switch (id) {
-            case "mojang" -> new MojangMappingProvider(envName);
-            case "yarn" -> new YarnMappingProvider();
-            case "quilt" -> new QuiltMappingProvider();
+            case "mojang" -> new MojangMappingProvider(this.versionData, envName);
+            case "yarn" -> new YarnMappingProvider(this.versionData);
+            case "quilt" -> new QuiltMappingProvider(this.versionData);
             default -> throw new JsonParseException("Invalid mappings id: " + id);
         };
     }

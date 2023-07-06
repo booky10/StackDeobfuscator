@@ -6,7 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.booky.stackdeobf.http.HttpUtil;
-import dev.booky.stackdeobf.util.CompatUtil;
+import dev.booky.stackdeobf.util.VersionData;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
 import net.fabricmc.mappingio.adapter.ForwardingMappingVisitor;
@@ -48,20 +48,21 @@ public class MojangMappingProvider extends AbstractMappingProvider {
     // the production/intermediary mappings need to be mapped back to their
     // obfuscated form, because mojang mappings are obfuscated -> named,
     // without the intermediary mappings inbetween
-    private final IntermediaryMappingProvider intermediary = new IntermediaryMappingProvider();
+    private final IntermediaryMappingProvider intermediary;
 
     private Path path;
     private MemoryMappingTree mappings;
 
-    public MojangMappingProvider(String environment) {
-        super("mojang");
-        Preconditions.checkState(CompatUtil.WORLD_VERSION >= 2203 || CompatUtil.WORLD_VERSION == 1976,
+    public MojangMappingProvider(VersionData versionData, String environment) {
+        super(versionData, "mojang");
+        Preconditions.checkState(versionData.getWorldVersion() >= 2203 || versionData.getWorldVersion() == 1976,
                 "Mojang mappings are only provided by mojang starting from 19w36a (excluding 1.14.4)");
         this.environment = environment;
+        this.intermediary = new IntermediaryMappingProvider(versionData);
 
-        CompatUtil.LOGGER.warn("By enabling mojang mappings, you agree to their license:");
+        LOGGER.warn("By enabling mojang mappings, you agree to their license:");
         for (String line : StringUtils.split(LICENSE, '\n')) {
-            CompatUtil.LOGGER.warn(line);
+            LOGGER.warn(line);
         }
     }
 
@@ -69,12 +70,12 @@ public class MojangMappingProvider extends AbstractMappingProvider {
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
         CompletableFuture<Void> intermediaryFuture = this.intermediary.downloadMappings0(cacheDir, executor);
 
-        this.path = cacheDir.resolve("mojang_" + CompatUtil.VERSION_ID + ".gz");
+        this.path = cacheDir.resolve("mojang_" + this.versionData.getId() + ".gz");
         if (Files.exists(this.path)) {
             return intermediaryFuture;
         }
 
-        return intermediaryFuture.thenCompose($ -> this.fetchMojangMappingsUri(CompatUtil.VERSION_ID, executor)
+        return intermediaryFuture.thenCompose($ -> this.fetchMojangMappingsUri(this.versionData.getId(), executor)
                 .thenCompose(uri -> HttpUtil.getAsync(uri, executor))
                 .thenAccept(mappingBytes -> {
                     try (OutputStream fileOutput = Files.newOutputStream(this.path);

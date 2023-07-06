@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import dev.booky.stackdeobf.mappings.providers.AbstractMappingProvider;
 import dev.booky.stackdeobf.mappings.providers.YarnMappingProvider;
+import dev.booky.stackdeobf.util.VersionData;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -15,10 +16,6 @@ import java.nio.file.Path;
 
 public final class StackDeobfConfig {
 
-    private static final Gson GSON = new GsonBuilder()
-            .disableHtmlEscaping().setPrettyPrinting()
-            .registerTypeAdapter(AbstractMappingProvider.class, MappingProviderSerializer.INSTANCE)
-            .create();
     private static final int CURRENT_VERSION = 2;
 
     @SerializedName("config-version-dont-touch-this")
@@ -36,12 +33,16 @@ public final class StackDeobfConfig {
     private StackDeobfConfig() {
     }
 
-    public static StackDeobfConfig load(Path configPath) throws IOException {
-        StackDeobfConfig config;
+    public static StackDeobfConfig load(VersionData versionData, Path configPath) throws IOException {
+        Gson gson = new GsonBuilder()
+                .disableHtmlEscaping().setPrettyPrinting()
+                .registerTypeAdapter(AbstractMappingProvider.class, new MappingProviderSerializer(versionData))
+                .create();
 
+        StackDeobfConfig config;
         if (Files.exists(configPath)) {
             try (BufferedReader reader = Files.newBufferedReader(configPath)) {
-                config = GSON.fromJson(reader, StackDeobfConfig.class);
+                config = gson.fromJson(reader, StackDeobfConfig.class);
             }
 
             if (config.version == CURRENT_VERSION) {
@@ -58,13 +59,13 @@ public final class StackDeobfConfig {
         } else {
             // create default config
             config = new StackDeobfConfig();
-            config.mappingProvider = new YarnMappingProvider();
+            config.mappingProvider = new YarnMappingProvider(versionData);
         }
 
         // either the config didn't exist before, or the config version was too old
         config.version = CURRENT_VERSION;
         try (BufferedWriter writer = Files.newBufferedWriter(configPath)) {
-            GSON.toJson(config, writer);
+            gson.toJson(config, writer);
         }
         return config;
     }

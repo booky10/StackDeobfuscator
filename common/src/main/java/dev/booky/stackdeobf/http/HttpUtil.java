@@ -1,8 +1,9 @@
 package dev.booky.stackdeobf.http;
 // Created by booky10 in StackDeobfuscator (18:10 29.03.23)
 
-import dev.booky.stackdeobf.util.CompatUtil;
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -16,6 +17,7 @@ import java.util.concurrent.ForkJoinPool;
 
 public final class HttpUtil {
 
+    private static final Logger LOGGER = LogManager.getLogger("StackDeobfuscator");
     private static final Map<Executor, HttpClient> HTTP = new WeakHashMap<>();
 
     private HttpUtil() {
@@ -43,7 +45,7 @@ public final class HttpUtil {
         HttpRequest request = HttpRequest.newBuilder(uri).build();
         HttpResponse.BodyHandler<byte[]> handler = HttpResponse.BodyHandlers.ofByteArray();
 
-        CompatUtil.LOGGER.info("Requesting {}...", uri);
+        LOGGER.info("Requesting {}...", uri);
         long start = System.currentTimeMillis();
 
         return getHttpClient(executor).sendAsync(request, handler).thenApplyAsync(resp -> {
@@ -55,11 +57,11 @@ public final class HttpUtil {
                     resp.statusCode(), uri, timeDiff};
 
             if (!isSuccess(resp.statusCode())) {
-                CompatUtil.LOGGER.error(message, args);
+                LOGGER.error(message, args);
                 throw new FailedHttpRequestException(resp);
             }
 
-            CompatUtil.LOGGER.info(message, args);
+            LOGGER.info(message, args);
             return bodyBytes;
         }, executor);
     }

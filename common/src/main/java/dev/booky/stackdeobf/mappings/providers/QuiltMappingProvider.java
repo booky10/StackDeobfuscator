@@ -3,8 +3,8 @@ package dev.booky.stackdeobf.mappings.providers;
 
 import com.google.common.base.Preconditions;
 import dev.booky.stackdeobf.http.HttpUtil;
-import dev.booky.stackdeobf.util.CompatUtil;
 import dev.booky.stackdeobf.util.MavenArtifactInfo;
+import dev.booky.stackdeobf.util.VersionData;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
 import net.fabricmc.mappingio.adapter.ForwardingMappingVisitor;
@@ -29,9 +29,12 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
 
     private static final String REPO_URL = System.getProperty("stackdeobf.quilt.repo-url", "https://maven.quiltmc.org/repository/release");
 
-    private static final MavenArtifactInfo MAPPINGS_ARTIFACT = MavenArtifactInfo.parse(REPO_URL,
-            System.getProperty("stackdeobf.quilt.mappings-artifact", "org.quiltmc:quilt-mappings:" +
-                    (CompatUtil.WORLD_VERSION >= 3120 ? "intermediary-v2" : "v2")));
+    private static final MavenArtifactInfo MAPPINGS_ARTIFACT_PRE_1192 = MavenArtifactInfo.parse(REPO_URL,
+            System.getProperty("stackdeobf.quilt.mappings-artifact.pre-1192",
+                    "org.quiltmc:quilt-mappings:v2"));
+    private static final MavenArtifactInfo MAPPINGS_ARTIFACT_POST_1192 = MavenArtifactInfo.parse(REPO_URL,
+            System.getProperty("stackdeobf.quilt.mappings-artifact.post-1192",
+                    "org.quiltmc:quilt-mappings:intermediary-v2"));
     private static final MavenArtifactInfo HASHED_MAPPINGS_ARTIFACT = MavenArtifactInfo.parse(REPO_URL,
             System.getProperty("stackdeobf.quilt.mappings-artifact", "org.quiltmc:hashed"));
 
@@ -40,35 +43,38 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
     // they are using their hashed inbetween step and didn't publish
     // intermediary mapped versions below 1.19.2, so more steps are
     // needed for converting hashed mappings to intermediary mappings
-    private final IntermediaryMappingProvider intermediary = new IntermediaryMappingProvider();
+    private final IntermediaryMappingProvider intermediary;
 
     private Path hashedPath;
     private MemoryMappingTree hashedMappings;
 
-    public QuiltMappingProvider() {
-        super("quilt", MAPPINGS_ARTIFACT);
-        Preconditions.checkState(CompatUtil.WORLD_VERSION >= 2975, "Quilt mappings are only supported for 1.18.2 and higher");
+    public QuiltMappingProvider(VersionData versionData) {
+        super(versionData, "quilt", versionData.getWorldVersion() >= 3120
+                ? MAPPINGS_ARTIFACT_POST_1192 : MAPPINGS_ARTIFACT_PRE_1192);
+        Preconditions.checkState(this.versionData.getWorldVersion() >= 2975,
+                "Quilt mappings are only supported for 1.18.2 and higher");
+        this.intermediary = new IntermediaryMappingProvider(versionData);
     }
 
     @Override
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
         CompletableFuture<Void> future = super.downloadMappings0(cacheDir, executor);
 
-        if (CompatUtil.WORLD_VERSION >= 3120) {
+        if (this.versionData.getWorldVersion() >= 3120) {
             return future; // 1.19.2+
         }
 
         // see comment at field declaration for reason
         future = future.thenCompose($ -> this.intermediary.downloadMappings0(cacheDir, executor));
 
-        this.hashedPath = cacheDir.resolve(this.name + "_" + CompatUtil.VERSION_ID + "_hashed.gz");
+        this.hashedPath = cacheDir.resolve(this.name + "_" + this.versionData.getId() + "_hashed.gz");
         if (Files.exists(this.hashedPath)) {
-            CompatUtil.LOGGER.info("Hashed {} mappings for {} are already downloaded", this.name, CompatUtil.VERSION_ID);
+            LOGGER.info("Hashed {} mappings for {} are already downloaded", this.name, this.versionData.getId());
             return future;
         }
 
-        URI hashedUri = HASHED_MAPPINGS_ARTIFACT.buildUri(CompatUtil.VERSION_ID, "jar");
-        CompatUtil.LOGGER.info("Downloading hashed {} mappings for {}...", this.name, CompatUtil.VERSION_ID);
+        URI hashedUri = HASHED_MAPPINGS_ARTIFACT.buildUri(this.versionData.getId(), "jar");
+        LOGGER.info("Downloading hashed {} mappings for {}...", this.name, this.versionData.getId());
 
         return future.thenCompose($ -> HttpUtil.getAsync(hashedUri, executor).thenAccept(jarBytes -> {
             byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
@@ -85,7 +91,7 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
     protected CompletableFuture<Void> parseMappings0(Executor executor) {
         CompletableFuture<Void> future = super.parseMappings0(executor);
 
-        if (CompatUtil.WORLD_VERSION >= 3120) {
+        if (this.versionData.getWorldVersion() >= 3120) {
             return future; // 1.19.2+
         }
 
@@ -106,7 +112,7 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
 
     @Override
     protected CompletableFuture<Void> visitMappings0(MappingVisitor visitor, Executor executor) {
-        if (CompatUtil.WORLD_VERSION >= 3120) {
+        if (this.versionData.getWorldVersion() >= 3120) {
             return super.visitMappings0(visitor, executor); // 1.19.2+
         }
 

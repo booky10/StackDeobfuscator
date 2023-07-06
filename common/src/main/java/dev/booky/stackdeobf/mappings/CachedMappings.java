@@ -3,10 +3,11 @@ package dev.booky.stackdeobf.mappings;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import dev.booky.stackdeobf.mappings.providers.AbstractMappingProvider;
-import dev.booky.stackdeobf.util.CompatUtil;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.nio.file.Path;
@@ -15,6 +16,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class CachedMappings {
+
+    private static final Logger LOGGER = LogManager.getLogger("StackDeobfuscator");
 
     // "CLASSES" name has package prefixed (separated by '.')
     private final Int2ObjectMap<String> classes = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
@@ -25,7 +28,7 @@ public final class CachedMappings {
     }
 
     public static CompletableFuture<CachedMappings> create(Path cacheDir, AbstractMappingProvider provider) {
-        CompatUtil.LOGGER.info("Creating asynchronous mapping cache executor...");
+        LOGGER.info("Creating asynchronous mapping cache executor...");
         ExecutorService cacheExecutor = Executors.newSingleThreadExecutor(
                 new ThreadFactoryBuilder().setNameFormat("Mappings Cache Thread").setDaemon(true).build());
         long start = System.currentTimeMillis();
@@ -37,22 +40,22 @@ public final class CachedMappings {
         return provider.cacheMappings(cacheDir, visitor, cacheExecutor)
                 .thenApply($ -> {
                     long timeDiff = System.currentTimeMillis() - start;
-                    CompatUtil.LOGGER.info("Cached mappings have been built (took {}ms)", timeDiff);
+                    LOGGER.info("Cached mappings have been built (took {}ms)", timeDiff);
 
-                    CompatUtil.LOGGER.info("  Classes: " + mappings.classes.size());
-                    CompatUtil.LOGGER.info("  Methods: " + mappings.methods.size());
-                    CompatUtil.LOGGER.info("  Fields: " + mappings.fields.size());
+                    LOGGER.info("  Classes: " + mappings.classes.size());
+                    LOGGER.info("  Methods: " + mappings.methods.size());
+                    LOGGER.info("  Fields: " + mappings.fields.size());
 
                     return mappings;
                 })
                 // needs to be executed asynchronously, otherwise the
                 // executor of the current thread would be shut down
                 .whenCompleteAsync(($, throwable) -> {
-                    CompatUtil.LOGGER.info("Shutting down asynchronous mapping cache executor...");
+                    LOGGER.info("Shutting down asynchronous mapping cache executor...");
                     cacheExecutor.shutdown();
 
                     if (throwable != null) {
-                        CompatUtil.LOGGER.error("An error occurred while creating mappings cache", throwable);
+                        LOGGER.error("An error occurred while creating mappings cache", throwable);
                     }
                 });
     }

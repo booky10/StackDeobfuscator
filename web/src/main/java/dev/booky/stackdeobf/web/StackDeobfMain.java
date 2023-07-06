@@ -6,6 +6,7 @@ import dev.booky.stackdeobf.mappings.providers.AbstractMappingProvider;
 import dev.booky.stackdeobf.mappings.providers.MojangMappingProvider;
 import dev.booky.stackdeobf.mappings.providers.QuiltMappingProvider;
 import dev.booky.stackdeobf.mappings.providers.YarnMappingProvider;
+import dev.booky.stackdeobf.util.VersionData;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.io.IoBuilder;
 
@@ -32,10 +33,11 @@ public final class StackDeobfMain {
         long startTime = System.currentTimeMillis();
         Thread.currentThread().setName("Startup Thread");
 
+        VersionData versionData = VersionData.fromClasspath();
         AbstractMappingProvider provider = switch (PROVIDER_STR) {
-            case "mojang" -> new MojangMappingProvider("client");
-            case "yarn" -> new YarnMappingProvider();
-            case "quilt" -> new QuiltMappingProvider();
+            case "mojang" -> new MojangMappingProvider(versionData, "client");
+            case "yarn" -> new YarnMappingProvider(versionData);
+            case "quilt" -> new QuiltMappingProvider(versionData);
             default -> throw new IllegalArgumentException("Invalid mappings id: " + PROVIDER_STR);
         };
         CachedMappings mappings = CachedMappings.create(CACHE_DIR.toAbsolutePath(), provider).join();

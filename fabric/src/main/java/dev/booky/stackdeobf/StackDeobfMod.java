@@ -3,17 +3,19 @@ package dev.booky.stackdeobf;
 
 import dev.booky.stackdeobf.config.StackDeobfConfig;
 import dev.booky.stackdeobf.mappings.CachedMappings;
-import dev.booky.stackdeobf.util.CompatUtil;
 import dev.booky.stackdeobf.util.RemappingRewritePolicy;
+import dev.booky.stackdeobf.util.VersionData;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
-import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 
 public class StackDeobfMod implements ModInitializer {
+
+    private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger("StackDeobfuscator");
+    private static final VersionData VERSION_DATA = VersionData.fromClasspath();
 
     private static CachedMappings mappings;
 
@@ -30,8 +32,8 @@ public class StackDeobfMod implements ModInitializer {
         }
     }
 
-    public static @Nullable CachedMappings getMappings() {
-        return mappings;
+    public static VersionData getVersionData() {
+        return VERSION_DATA;
     }
 
     @Override
@@ -46,7 +48,7 @@ public class StackDeobfMod implements ModInitializer {
             StackDeobfMod.mappings = mappings;
 
             if (config.hasLogInjectEnabled()) {
-                CompatUtil.LOGGER.info("Injecting into root logger...");
+                LOGGER.info("Injecting into root logger...");
 
                 RemappingRewritePolicy policy = new RemappingRewritePolicy(
                         mappings, config.shouldRewriteEveryLogMessage());
@@ -58,7 +60,7 @@ public class StackDeobfMod implements ModInitializer {
     private StackDeobfConfig loadConfig() {
         try {
             Path configPath = FabricLoader.getInstance().getConfigDir().resolve("stackdeobf.json");
-            return StackDeobfConfig.load(configPath);
+            return StackDeobfConfig.load(VERSION_DATA, configPath);
         } catch (Throwable throwable) {
             throw new RuntimeException("Exception occurred while loading stack deobfuscator configuration", throwable);
         }

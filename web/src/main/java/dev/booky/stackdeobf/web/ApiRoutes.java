@@ -2,7 +2,7 @@ package dev.booky.stackdeobf.web;
 // Created by booky10 in StackDeobfuscator (17:06 06.07.23)
 
 import dev.booky.stackdeobf.http.HttpUtil;
-import dev.booky.stackdeobf.mappings.RemappingUtil;
+import dev.booky.stackdeobf.mappings.CachedMappings;
 import dev.booky.stackdeobf.util.CompatUtil;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -17,12 +17,12 @@ public final class ApiRoutes {
     private ApiRoutes() {
     }
 
-    public static void register(Javalin javalin) {
-        javalin.get(PREFIX + "/deobf/url", ApiRoutes::handleDeobfUrlReq);
-        javalin.post(PREFIX + "/deobf/body", ApiRoutes::handleDeobfReq);
+    public static void register(CachedMappings mappings, Javalin javalin) {
+        javalin.get(PREFIX + "/deobf/url", ctx -> handleDeobfUrlReq(mappings, ctx));
+        javalin.post(PREFIX + "/deobf/body", ctx -> handleDeobfReq(mappings, ctx));
     }
 
-    private static void handleDeobfUrlReq(Context ctx) {
+    private static void handleDeobfUrlReq(CachedMappings mappings, Context ctx) {
         URI uri = URI.create(Objects.requireNonNull(ctx.queryParam("url")));
         HttpUtil.getAsync(uri).handle((bytes, throwable) -> {
             if (throwable != null) {
@@ -32,7 +32,7 @@ public final class ApiRoutes {
 
             if (bytes != null) {
                 String str = new String(bytes);
-                ctx.result(RemappingUtil.remapString(str));
+                ctx.result(mappings.remapString(str));
             }
 
             // don't care about result
@@ -40,7 +40,7 @@ public final class ApiRoutes {
         }).join();
     }
 
-    private static void handleDeobfReq(Context ctx) {
-        ctx.result(RemappingUtil.remapString(ctx.body()));
+    private static void handleDeobfReq(CachedMappings mappings, Context ctx) {
+        ctx.result(mappings.remapString(ctx.body()));
     }
 }

@@ -1,7 +1,7 @@
 package dev.booky.stackdeobf.mixin;
 // Created by booky10 in StackDeobfuscator (18:46 20.03.23)
 
-import dev.booky.stackdeobf.mappings.RemappingUtil;
+import dev.booky.stackdeobf.StackDeobfMod;
 import net.minecraft.CrashReportCategory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -12,7 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(CrashReportCategory.class)
 public class CrashReportCategoryMixin {
 
-    @Shadow private StackTraceElement[] stackTrace;
+    @Shadow
+    private StackTraceElement[] stackTrace;
 
     @Inject(
             method = "fillInStackTrace",
@@ -23,6 +24,6 @@ public class CrashReportCategoryMixin {
             )
     )
     public void postStackTraceFill(int i, CallbackInfoReturnable<Integer> cir) {
-        RemappingUtil.remapStackTraceElements(this.stackTrace);
+        StackDeobfMod.remap(this.stackTrace);
     }
 }

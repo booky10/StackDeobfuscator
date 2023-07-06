@@ -1,7 +1,7 @@
 package dev.booky.stackdeobf.util;
 // Created by booky10 in StackDeobfuscator (15:17 14.04.23)
 
-import dev.booky.stackdeobf.mappings.RemappingUtil;
+import dev.booky.stackdeobf.mappings.CachedMappings;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.Logger;
@@ -18,9 +18,11 @@ import java.util.Set;
 
 public final class RemappingRewritePolicy implements RewritePolicy {
 
+    private final CachedMappings mappings;
     private final boolean rewriteMessages;
 
-    public RemappingRewritePolicy(boolean rewriteMessages) {
+    public RemappingRewritePolicy(CachedMappings mappings, boolean rewriteMessages) {
+        this.mappings = mappings;
         this.rewriteMessages = rewriteMessages;
     }
 
@@ -51,7 +53,7 @@ public final class RemappingRewritePolicy implements RewritePolicy {
         Log4jLogEvent.Builder builder = new Log4jLogEvent.Builder(source);
         if (this.rewriteMessages) {
             String message = source.getMessage().getFormattedMessage();
-            message = RemappingUtil.remapString(message);
+            message = this.mappings.remapString(message);
             builder.setMessage(new SimpleMessage(message));
         }
         if (source.getThrown() != null) {
@@ -60,7 +62,7 @@ public final class RemappingRewritePolicy implements RewritePolicy {
 
             try {
                 ThrowableProxy proxy = new ThrowableProxy(source.getThrown());
-                Log4jRemapUtil.remapThrowableProxy(proxy);
+                Log4jRemapUtil.remapThrowableProxy(this.mappings, proxy);
                 builder.setThrownProxy(proxy);
             } catch (IllegalAccessException exception) {
                 throw new RuntimeException(exception);

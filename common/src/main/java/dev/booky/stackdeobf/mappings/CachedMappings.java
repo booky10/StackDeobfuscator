@@ -10,58 +10,90 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class CachedMappings {
 
     // "CLASSES" name has package prefixed (separated by '.')
-    private static final Int2ObjectMap<String> CLASSES = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
-    private static final Int2ObjectMap<String> METHODS = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
-    private static final Int2ObjectMap<String> FIELDS = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
+    private final Int2ObjectMap<String> classes = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
+    private final Int2ObjectMap<String> methods = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
+    private final Int2ObjectMap<String> fields = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
 
     private CachedMappings() {
     }
 
-    public static void init(Path cacheDir, AbstractMappingProvider provider) {
+    public static CompletableFuture<CachedMappings> create(Path cacheDir, AbstractMappingProvider provider) {
         CompatUtil.LOGGER.info("Creating asynchronous mapping cache executor...");
         ExecutorService cacheExecutor = Executors.newSingleThreadExecutor(
                 new ThreadFactoryBuilder().setNameFormat("Mappings Cache Thread").setDaemon(true).build());
         long start = System.currentTimeMillis();
 
+        CachedMappings mappings = new CachedMappings();
+
         // visitor expects mappings to be intermediary -> named
-        provider.cacheMappings(cacheDir, new MappingCacheVisitor(CLASSES, METHODS, FIELDS), cacheExecutor)
-                .thenAccept($ -> {
+        MappingCacheVisitor visitor = new MappingCacheVisitor(mappings.classes, mappings.methods, mappings.fields);
+        return provider.cacheMappings(cacheDir, visitor, cacheExecutor)
+                .thenApply($ -> {
                     long timeDiff = System.currentTimeMillis() - start;
                     CompatUtil.LOGGER.info("Cached mappings have been built (took {}ms)", timeDiff);
 
-                    CompatUtil.LOGGER.info("  Classes: " + CLASSES.size());
-                    CompatUtil.LOGGER.info("  Methods: " + METHODS.size());
-                    CompatUtil.LOGGER.info("  Fields: " + FIELDS.size());
+                    CompatUtil.LOGGER.info("  Classes: " + mappings.classes.size());
+                    CompatUtil.LOGGER.info("  Methods: " + mappings.methods.size());
+                    CompatUtil.LOGGER.info("  Fields: " + mappings.fields.size());
+
+                    return mappings;
                 })
                 // needs to be executed asynchronously, otherwise the
                 // executor of the current thread would be shut down
-                .handleAsync((res, throwable) -> {
+                .whenCompleteAsync(($, throwable) -> {
                     CompatUtil.LOGGER.info("Shutting down asynchronous mapping cache executor...");
                     cacheExecutor.shutdown();
 
                     if (throwable != null) {
                         CompatUtil.LOGGER.error("An error occurred while creating mappings cache", throwable);
                     }
-
-                    return null;
                 });
     }
 
-    public static @Nullable String remapClass(int id) {
-        return CLASSES.get(id);
+    public @Nullable String remapClass(int id) {
+        return this.classes.get(id);
     }
 
-    public static @Nullable String remapMethod(int id) {
-        return METHODS.get(id);
+    public @Nullable String remapMethod(int id) {
+        return this.methods.get(id);
     }
 
-    public static @Nullable String remapField(int id) {
-        return FIELDS.get(id);
+    public @Nullable String remapField(int id) {
+        return this.fields.get(id);
+    }
+
+    public String remapClasses(String string) {
+        return RemappingUtil.remapClasses(this, string);
+    }
+
+    public String remapMethods(String string) {
+        return RemappingUtil.remapMethods(this, string);
+    }
+
+    public String remapFields(String string) {
+        return RemappingUtil.remapFields(this, string);
+    }
+
+    public String remapString(String string) {
+        return RemappingUtil.remapString(this, string);
+    }
+
+    public Throwable remapThrowable(Throwable throwable) {
+        return RemappingUtil.remapThrowable(this, throwable);
+    }
+
+    public void remapStackTrace(StackTraceElement[] elements) {
+        RemappingUtil.remapStackTrace(this, elements);
+    }
+
+    public StackTraceElement remapStackTrace(StackTraceElement element) {
+        return RemappingUtil.remapStackTrace(this, element);
     }
 }

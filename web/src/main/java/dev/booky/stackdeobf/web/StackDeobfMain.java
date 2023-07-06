@@ -38,9 +38,9 @@ public final class StackDeobfMain {
             case "quilt" -> new QuiltMappingProvider();
             default -> throw new IllegalArgumentException("Invalid mappings id: " + PROVIDER_STR);
         };
-        CachedMappings.init(CACHE_DIR.toAbsolutePath(), provider);
+        CachedMappings mappings = CachedMappings.create(CACHE_DIR.toAbsolutePath(), provider).join();
 
-        StackDeobfService service = new StackDeobfService(HTTP_BIND, HTTP_PORT);
+        StackDeobfService service = new StackDeobfService(mappings, HTTP_BIND, HTTP_PORT);
         service.start(startTime);
     }
 }

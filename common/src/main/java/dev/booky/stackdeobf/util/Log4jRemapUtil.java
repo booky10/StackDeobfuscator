@@ -1,7 +1,7 @@
 package dev.booky.stackdeobf.util;
 // Created by booky10 in StackDeobfuscator (22:33 14.04.23)
 
-import dev.booky.stackdeobf.mappings.RemappingUtil;
+import dev.booky.stackdeobf.mappings.CachedMappings;
 import org.apache.logging.log4j.core.impl.ExtendedStackTraceElement;
 import org.apache.logging.log4j.core.impl.ThrowableProxy;
 
@@ -24,33 +24,33 @@ final class Log4jRemapUtil {
         }
     }
 
-    static void remapThrowableProxy(ThrowableProxy proxy) throws IllegalAccessException {
+    static void remapThrowableProxy(CachedMappings mappings, ThrowableProxy proxy) throws IllegalAccessException {
         // remap throwable classname
         if (proxy.getName() != null && proxy.getName().startsWith("net.minecraft.class_")) {
-            PROXY_NAME.set(proxy, RemappingUtil.remapClasses(proxy.getName()));
+            PROXY_NAME.set(proxy, mappings.remapClasses(proxy.getName()));
         }
 
         // remap throwable message
         if (proxy.getMessage() != null) {
-            PROXY_MESSAGE.set(proxy, RemappingUtil.remapString(proxy.getMessage()));
+            PROXY_MESSAGE.set(proxy, mappings.remapString(proxy.getMessage()));
         }
         if (proxy.getLocalizedMessage() != null) {
-            PROXY_LOCALIZED_MESSAGE.set(proxy, RemappingUtil.remapString(proxy.getLocalizedMessage()));
+            PROXY_LOCALIZED_MESSAGE.set(proxy, mappings.remapString(proxy.getLocalizedMessage()));
         }
 
         // remap throwable stack trace
         for (ExtendedStackTraceElement extElement : proxy.getExtendedStackTrace()) {
             StackTraceElement element = extElement.getStackTraceElement();
-            element = RemappingUtil.remapStackTraceElement(element);
+            element = mappings.remapStackTrace(element);
             EXT_STACK_ELEMENT.set(extElement, element);
         }
 
         // remap cause + suppressed throwables
         if (proxy.getCauseProxy() != null) {
-            remapThrowableProxy(proxy.getCauseProxy());
+            remapThrowableProxy(mappings, proxy.getCauseProxy());
         }
         for (ThrowableProxy suppressed : proxy.getSuppressedProxies()) {
-            remapThrowableProxy(suppressed);
+            remapThrowableProxy(mappings, suppressed);
         }
     }
 }

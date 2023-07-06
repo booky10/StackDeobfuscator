@@ -4,19 +4,19 @@ package dev.booky.stackdeobf.mappings;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public final class RemappingUtil {
+final class RemappingUtil {
 
-    static final Pattern CLASS_PATTERN = Pattern.compile("(net\\.minecraft\\.|net/minecraft/)?class_(\\d+)");
+    private static final Pattern CLASS_PATTERN = Pattern.compile("(net\\.minecraft\\.|net/minecraft/)?class_(\\d+)");
     private static final Pattern METHOD_PATTERN = Pattern.compile("method_(\\d+)");
     private static final Pattern FIELD_PATTERN = Pattern.compile("field_(\\d+)");
 
     private RemappingUtil() {
     }
 
-    public static String remapClasses(String string) {
+    public static String remapClasses(CachedMappings mappings, String string) {
         return CLASS_PATTERN.matcher(string).replaceAll(result -> {
             int classId = Integer.parseInt(result.group(2));
-            String className = CachedMappings.remapClass(classId);
+            String className = mappings.remapClass(classId);
             if (className == null) {
                 return Matcher.quoteReplacement(result.group());
             }
@@ -39,91 +39,91 @@ public final class RemappingUtil {
         });
     }
 
-    public static String remapMethods(String string) {
+    public static String remapMethods(CachedMappings mappings, String string) {
         return METHOD_PATTERN.matcher(string).replaceAll(result -> {
             int methodId = Integer.parseInt(result.group(1));
-            String methodName = CachedMappings.remapMethod(methodId);
+            String methodName = mappings.remapMethod(methodId);
             return Matcher.quoteReplacement(methodName == null ? result.group() : methodName);
         });
     }
 
-    public static String remapFields(String string) {
+    public static String remapFields(CachedMappings mappings, String string) {
         return FIELD_PATTERN.matcher(string).replaceAll(result -> {
             int fieldId = Integer.parseInt(result.group(1));
-            String fieldName = CachedMappings.remapField(fieldId);
+            String fieldName = mappings.remapField(fieldId);
             return Matcher.quoteReplacement(fieldName == null ? result.group() : fieldName);
         });
     }
 
-    public static String remapString(String string) {
+    public static String remapString(CachedMappings mappings, String string) {
         if (string.contains("class_")) {
-            string = remapClasses(string);
+            string = remapClasses(mappings, string);
         }
 
         if (string.contains("method_")) {
-            string = remapMethods(string);
+            string = remapMethods(mappings, string);
         }
 
         if (string.contains("field_")) {
-            string = remapFields(string);
+            string = remapFields(mappings, string);
         }
 
         return string;
     }
 
-    public static Throwable remapThrowable(Throwable throwable) {
+    public static Throwable remapThrowable(CachedMappings mappings, Throwable throwable) {
         if (throwable instanceof RemappedThrowable) {
             return throwable;
         }
 
         StackTraceElement[] stackTrace = throwable.getStackTrace();
-        remapStackTraceElements(stackTrace);
+        remapStackTrace(mappings, stackTrace);
 
         Throwable cause = throwable.getCause();
         if (cause != null) {
-            cause = remapThrowable(cause);
+            cause = remapThrowable(mappings, cause);
         }
 
         String message = throwable.getMessage();
         if (message != null) {
-            message = remapString(message);
+            message = remapString(mappings, message);
         }
 
         String throwableName = throwable.getClass().getName();
         if (throwableName.startsWith("net.minecraft.class_")) {
-            throwableName = remapClasses(throwableName);
+            throwableName = remapClasses(mappings, throwableName);
         }
 
         Throwable remapped = new RemappedThrowable(message, cause, throwable, throwableName);
         remapped.setStackTrace(stackTrace);
         for (Throwable suppressed : throwable.getSuppressed()) {
-            remapped.addSuppressed(remapThrowable(suppressed));
+            remapped.addSuppressed(remapThrowable(mappings, suppressed));
         }
         return remapped;
     }
 
-    public static void remapStackTraceElements(StackTraceElement[] elements) {
+    public static void remapStackTrace(CachedMappings mappings, StackTraceElement[] elements) {
         for (int i = 0; i < elements.length; i++) {
-            elements[i] = remapStackTraceElement(elements[i]);
+            elements[i] = remapStackTrace(mappings, elements[i]);
         }
     }
 
-    public static StackTraceElement remapStackTraceElement(StackTraceElement element) {
+    public static StackTraceElement remapStackTrace(CachedMappings mappings, StackTraceElement element) {
         String className = element.getClassName();
         boolean remappedClass = false;
         if (className.startsWith("net.minecraft.class_")) {
-            className = remapClasses(className);
+            className = remapClasses(mappings, className);
             remappedClass = true;
         }
 
         String fileName = element.getFileName();
         if (fileName != null && fileName.startsWith("class_")) {
-            fileName = remapClasses(fileName);
+            fileName = remapClasses(mappings, fileName);
         }
 
         String methodName = element.getMethodName();
         if (methodName.startsWith("method_")) {
-            methodName = remapMethods(methodName);
+            methodName = remapMethods(mappings, methodName);
         }
 
         String classLoaderName = element.getClassLoaderName();

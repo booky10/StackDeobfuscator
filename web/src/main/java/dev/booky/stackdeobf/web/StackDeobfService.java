@@ -1,6 +1,7 @@
 package dev.booky.stackdeobf.web;
 // Created by booky10 in StackDeobfuscator (17:02 06.07.23)
 
+import dev.booky.stackdeobf.mappings.CachedMappings;
 import dev.booky.stackdeobf.util.CompatUtil;
 import io.javalin.Javalin;
 import io.javalin.plugin.bundled.CorsPluginConfig;
@@ -10,13 +11,15 @@ import java.text.DecimalFormat;
 
 public final class StackDeobfService {
 
+    private final CachedMappings mappings;
     private final String bindAddress;
     private final int port;
 
     private Javalin javalin;
     private boolean running = true;
 
-    public StackDeobfService(String bindAddress, int port) {
+    public StackDeobfService(CachedMappings mappings, String bindAddress, int port) {
+        this.mappings = mappings;
         this.bindAddress = bindAddress;
         this.port = port;
     }
@@ -33,7 +36,7 @@ public final class StackDeobfService {
         });
 
         CompatUtil.LOGGER.info("Configuring http routes...");
-        ApiRoutes.register(this.javalin);
+        ApiRoutes.register(this.mappings, this.javalin);
 
         CompatUtil.LOGGER.info("Launching javalin service on {}...", this.bindAddress);
         this.javalin.start(this.bindAddress, this.port);

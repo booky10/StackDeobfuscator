@@ -1,7 +1,7 @@
 package dev.booky.stackdeobf.mixin;
 // Created by booky10 in StackDeobfuscator (18:50 20.03.23)
 
-import dev.booky.stackdeobf.mappings.RemappingUtil;
+import dev.booky.stackdeobf.StackDeobfMod;
 import net.minecraft.util.ThreadingDetector;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,7 +19,7 @@ public class ThreadingDetectorMixin {
     )
     private static StackTraceElement[] redirStackTrace(Thread thread) {
         StackTraceElement[] stackTrace = thread.getStackTrace();
-        RemappingUtil.remapStackTraceElements(stackTrace);
+        StackDeobfMod.remap(stackTrace);
         return stackTrace;
     }
 }

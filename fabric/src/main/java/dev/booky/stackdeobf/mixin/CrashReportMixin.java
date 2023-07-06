@@ -1,8 +1,8 @@
 package dev.booky.stackdeobf.mixin;
 // Created by booky10 in StackDeobfuscator (18:35 20.03.23)
 
+import dev.booky.stackdeobf.StackDeobfMod;
 import dev.booky.stackdeobf.mappings.RemappedThrowable;
-import dev.booky.stackdeobf.mappings.RemappingUtil;
 import net.minecraft.CrashReport;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,14 +16,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(CrashReport.class)
 public class CrashReportMixin {
 
-    @Mutable @Shadow @Final private Throwable exception;
+    @Mutable
+    @Shadow
+    @Final
+    private Throwable exception;
 
     @Inject(
             method = "<init>",
             at = @At("TAIL")
     )
     public void postInit(String title, Throwable throwable, CallbackInfo ci) {
-        this.exception = RemappingUtil.remapThrowable(throwable);
+        this.exception = StackDeobfMod.remap(throwable);
     }
 
     @Inject(

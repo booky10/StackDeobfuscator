@@ -33,6 +33,7 @@ public final class ApiRoutes {
     private static final String PREFIX = "/api/v1";
 
     private final AsyncLoadingCache<CacheKey, CachedMappings> mappingsCache;
+    private final AsyncLoadingCache<URI, byte[]> urlCache;
 
     private final Javalin javalin;
     private final Map<Integer, VersionData> versionData;
@@ -44,6 +45,9 @@ public final class ApiRoutes {
         this.mappingsCache = Caffeine.newBuilder()
                 .expireAfterAccess(1, TimeUnit.HOURS)
                 .buildAsync(this::loadMapping);
+        this.urlCache = Caffeine.newBuilder()
+                .expireAfterAccess(1, TimeUnit.HOURS)
+                .buildAsync((uri, executor) -> HttpUtil.getAsync(uri, executor));
     }
 
     public static void register(Javalin javalin, Map<Integer, VersionData> versionData) {
@@ -110,7 +114,7 @@ public final class ApiRoutes {
         }
 
         return this.getMappings(ctx)
-                .thenCompose(mappings -> HttpUtil.getAsync(uri)
+                .thenCompose(mappings -> this.urlCache.get(uri)
                         .thenAccept(bytes -> {
                             String str = new String(bytes);
                             String remappedStr = mappings.remapString(str);

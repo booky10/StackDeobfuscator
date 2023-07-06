@@ -23,14 +23,14 @@ public final class CachedMappings {
     private CachedMappings() {
     }
 
-    public static void init(Path gameDir, AbstractMappingProvider provider) {
+    public static void init(Path cacheDir, AbstractMappingProvider provider) {
         CompatUtil.LOGGER.info("Creating asynchronous mapping cache executor...");
         ExecutorService cacheExecutor = Executors.newSingleThreadExecutor(
                 new ThreadFactoryBuilder().setNameFormat("Mappings Cache Thread").setDaemon(true).build());
         long start = System.currentTimeMillis();
 
         // visitor expects mappings to be intermediary -> named
-        provider.cacheMappings(gameDir, new MappingCacheVisitor(CLASSES, METHODS, FIELDS), cacheExecutor)
+        provider.cacheMappings(cacheDir, new MappingCacheVisitor(CLASSES, METHODS, FIELDS), cacheExecutor)
                 .thenAccept($ -> {
                     long timeDiff = System.currentTimeMillis() - start;
                     CompatUtil.LOGGER.info("Cached mappings have been built (took {}ms)", timeDiff);

@@ -21,12 +21,12 @@ public abstract class AbstractMappingProvider {
         this.name = name;
     }
 
-    private static Path getCacheDir(Path gameDir) {
+    private static Path getCacheDir(Path fallbackDir) {
         Path cacheDir;
         if (System.getProperties().containsKey("stackdeobf.mappings-cache-dir")) {
             cacheDir = Path.of(System.getProperty("stackdeobf.mappings-cache-dir"));
         } else {
-            cacheDir = gameDir.resolve("stackdeobf_mappings");
+            cacheDir = fallbackDir;
         }
 
         if (Files.notExists(cacheDir)) {
@@ -41,8 +41,8 @@ public abstract class AbstractMappingProvider {
         return cacheDir;
     }
 
-    public CompletableFuture<Void> cacheMappings(Path gameDir, MappingVisitor visitor, Executor executor) {
-        Path cacheDir = getCacheDir(gameDir);
+    public CompletableFuture<Void> cacheMappings(Path fallbackCacheDir, MappingVisitor visitor, Executor executor) {
+        Path cacheDir = getCacheDir(fallbackCacheDir);
 
         return CompletableFuture.completedFuture(null)
                 .thenComposeAsync($ -> this.downloadMappings(cacheDir, executor), executor)

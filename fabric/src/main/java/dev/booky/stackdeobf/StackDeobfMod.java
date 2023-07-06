@@ -25,7 +25,8 @@ public class StackDeobfMod implements ModInitializer {
         }
 
         Path gameDir = FabricLoader.getInstance().getGameDir();
-        CachedMappings.init(gameDir, config.getMappingProvider());
+        Path cacheDir = gameDir.resolve("stackdeobf_mappings");
+        CachedMappings.init(cacheDir, config.getMappingProvider());
     }
 
     private StackDeobfConfig loadConfig() {

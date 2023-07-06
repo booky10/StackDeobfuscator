@@ -11,8 +11,12 @@ builtin-google-gson = "2.10"
 builtin-google-guava = "31.1-jre"
 builtin-fastutil = "8.5.9"
 
+# web project
+javalin = "5.6.1"
+
 [plugins]
 loom = "fabric-loom:1.3-SNAPSHOT"
+shadow = "com.github.johnrengelman.shadow:8.1.1"
 
 [libraries]
 fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
@@ -22,12 +26,23 @@ minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
 # built in minecraft, required for compiling
 builtin-log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "builtin-log4j" }
 builtin-log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "builtin-log4j" }
-builtin-commons-io = { module = "commons-io:commons-io", version.ref = "builtin-commons-io"}
-builtin-commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "builtin-commons-lang3"}
+builtin-log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "builtin-log4j" }
+builtin-commons-io = { module = "commons-io:commons-io", version.ref = "builtin-commons-io" }
+builtin-commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "builtin-commons-lang3" }
 builtin-google-gson = { module = "com.google.code.gson:gson", version.ref = "builtin-google-gson" }
-builtin-google-guava = { module = "com.google.guava:guava", version.ref = "builtin-google-guava"}
-builtin-fastutil = { module = "it.unimi.dsi:fastutil", version.ref = "builtin-fastutil"}
+builtin-google-guava = { module = "com.google.guava:guava", version.ref = "builtin-google-guava" }
+builtin-fastutil = { module = "it.unimi.dsi:fastutil", version.ref = "builtin-fastutil" }
+
+# web
+javalin = { module = "io.javalin:javalin", version.ref = "javalin" }
+log4j-iostreams = { module = "org.apache.logging.log4j:log4j-iostreams", version.ref = "builtin-log4j" }
 
 [bundles]
 # built in minecraft, required for compiling
-builtin-log4j = ["builtin-log4j-api", "builtin-log4j-core"]
+builtin = ["builtin-log4j-api", "builtin-log4j-core",
+    "builtin-commons-io", "builtin-commons-lang3",
+    "builtin-google-gson", "builtin-google-guava",
+    "builtin-fastutil"]
+
+# web
+log4j = ["builtin-log4j-api", "builtin-log4j-core", "builtin-log4j-slf4j2-impl", "log4j-iostreams"]

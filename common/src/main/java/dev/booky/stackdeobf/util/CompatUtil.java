@@ -3,7 +3,6 @@ package dev.booky.stackdeobf.util;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import dev.booky.stackdeobf.StackDeobfMod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,7 +35,7 @@ public final class CompatUtil {
 
     // slf4j and mojang's logging utilities don't exist in older versions,
     // so directly use the log4j logger
-    public static final Logger LOGGER = LogManager.getLogger(StackDeobfMod.class);
+    public static final Logger LOGGER = LogManager.getLogger("StackDeobfuscator");
 
     private CompatUtil() {
     }

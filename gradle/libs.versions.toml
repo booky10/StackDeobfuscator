@@ -1,0 +1,33 @@
+[versions]
+fabric-loader = "0.14.11"
+fabric-mappingio = "0.3.0"
+minecraft = "1.19.4"
+
+# built in minecraft, required for compiling
+builtin-log4j = "2.19.0"
+builtin-commons-io = "2.11.0"
+builtin-commons-lang3 = "3.12.0"
+builtin-google-gson = "2.10"
+builtin-google-guava = "31.1-jre"
+builtin-fastutil = "8.5.9"
+
+[plugins]
+loom = "fabric-loom:1.1-SNAPSHOT"
+
+[libraries]
+fabric-loader = { module = "net.fabricmc:fabric-loader", version.ref = "fabric-loader" }
+fabric-mappingio = { module = "net.fabricmc:mapping-io", version.ref = "fabric-mappingio" }
+minecraft = { module = "com.mojang:minecraft", version.ref = "minecraft" }
+
+# built in minecraft, required for compiling
+builtin-log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "builtin-log4j" }
+builtin-log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "builtin-log4j" }
+builtin-commons-io = { module = "commons-io:commons-io", version.ref = "builtin-commons-io"}
+builtin-commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "builtin-commons-lang3"}
+builtin-google-gson = { module = "com.google.code.gson:gson", version.ref = "builtin-google-gson" }
+builtin-google-guava = { module = "com.google.guava:guava", version.ref = "builtin-google-guava"}
+builtin-fastutil = { module = "it.unimi.dsi:fastutil", version.ref = "builtin-fastutil"}
+
+[bundles]
+# built in minecraft, required for compiling
+builtin-log4j = ["builtin-log4j-api", "builtin-log4j-core"]

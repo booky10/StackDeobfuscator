@@ -2,12 +2,11 @@ package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (16:57 23.03.23)
 
 import com.google.common.base.Preconditions;
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.booky.stackdeobf.http.HttpUtil;
 import dev.booky.stackdeobf.util.CompatUtil;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
 import net.fabricmc.mappingio.adapter.ForwardingMappingVisitor;
@@ -15,7 +14,6 @@ import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.tree.MappingTree;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
-import net.minecraft.util.GsonHelper;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayInputStream;
@@ -28,7 +26,6 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.zip.GZIPInputStream;
@@ -43,6 +40,10 @@ public class MojangMappingProvider extends AbstractMappingProvider {
             Use and modification of this document or the source code (in any form) of Minecraft: Java Edition is governed by
             the Minecraft End User License Agreement available at https://account.mojang.com/documents/minecraft_eula.
             """;
+    private static final Gson GSON = new Gson();
+
+    // mojang mappings are split between client and server
+    private final String environment;
 
     // the production/intermediary mappings need to be mapped back to their
     // obfuscated form, because mojang mappings are obfuscated -> named,
@@ -52,10 +53,11 @@ public class MojangMappingProvider extends AbstractMappingProvider {
     private Path path;
     private MemoryMappingTree mappings;
 
-    public MojangMappingProvider() {
+    public MojangMappingProvider(String environment) {
         super("mojang");
         Preconditions.checkState(CompatUtil.WORLD_VERSION >= 2203 || CompatUtil.WORLD_VERSION == 1976,
                 "Mojang mappings are only provided by mojang starting from 19w36a (excluding 1.14.4)");
+        this.environment = environment;
 
         CompatUtil.LOGGER.warn("By enabling mojang mappings, you agree to their license:");
         for (String line : StringUtils.split(LICENSE, '\n')) {
@@ -90,7 +92,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
             JsonObject manifestObj;
             try (ByteArrayInputStream input = new ByteArrayInputStream(manifestResp);
                  Reader reader = new InputStreamReader(input)) {
-                manifestObj = GsonHelper.parse(reader);
+                manifestObj = GSON.fromJson(reader, JsonObject.class);
             } catch (IOException exception) {
                 throw new RuntimeException(exception);
             }
@@ -106,17 +108,14 @@ public class MojangMappingProvider extends AbstractMappingProvider {
                     JsonObject infoObj;
                     try (ByteArrayInputStream input = new ByteArrayInputStream(infoResp);
                          Reader reader = new InputStreamReader(input)) {
-                        infoObj = GsonHelper.parse(reader);
+                        infoObj = GSON.fromJson(reader, JsonObject.class);
                     } catch (IOException exception) {
                         throw new RuntimeException(exception);
                     }
 
-                    EnvType env = FabricLoader.getInstance().getEnvironmentType();
-                    String envName = env.name().toLowerCase(Locale.ROOT);
-
                     return URI.create(infoObj
                             .getAsJsonObject("downloads")
-                            .getAsJsonObject(envName + "_mappings")
+                            .getAsJsonObject(this.environment + "_mappings")
                             .get("url").getAsString());
                 });
             }

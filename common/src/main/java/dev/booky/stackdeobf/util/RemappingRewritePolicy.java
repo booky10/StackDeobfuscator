@@ -1,7 +1,6 @@
 package dev.booky.stackdeobf.util;
 // Created by booky10 in StackDeobfuscator (15:17 14.04.23)
 
-import dev.booky.stackdeobf.config.StackDeobfConfig;
 import dev.booky.stackdeobf.mappings.RemappingUtil;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LogEvent;
@@ -21,8 +20,8 @@ public final class RemappingRewritePolicy implements RewritePolicy {
 
     private final boolean rewriteMessages;
 
-    public RemappingRewritePolicy(StackDeobfConfig config) {
-        this.rewriteMessages = config.shouldRewriteEveryLogMessage();
+    public RemappingRewritePolicy(boolean rewriteMessages) {
+        this.rewriteMessages = rewriteMessages;
     }
 
     public void inject(Logger logger) {

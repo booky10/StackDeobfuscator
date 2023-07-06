@@ -20,11 +20,12 @@ public class StackDeobfMod implements ModInitializer {
 
         if (config.hasLogInjectEnabled()) {
             CompatUtil.LOGGER.info("Injecting into root logger...");
-            RemappingRewritePolicy policy = new RemappingRewritePolicy(config);
+            RemappingRewritePolicy policy = new RemappingRewritePolicy(config.shouldRewriteEveryLogMessage());
             policy.inject((Logger) LogManager.getRootLogger());
         }
 
-        CachedMappings.init(config.getMappingProvider());
+        Path gameDir = FabricLoader.getInstance().getGameDir();
+        CachedMappings.init(gameDir, config.getMappingProvider());
     }
 
     private StackDeobfConfig loadConfig() {

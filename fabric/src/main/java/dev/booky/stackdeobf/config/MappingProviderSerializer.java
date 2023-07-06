@@ -14,6 +14,8 @@ import dev.booky.stackdeobf.mappings.providers.CustomMappingProvider;
 import dev.booky.stackdeobf.mappings.providers.MojangMappingProvider;
 import dev.booky.stackdeobf.mappings.providers.QuiltMappingProvider;
 import dev.booky.stackdeobf.mappings.providers.YarnMappingProvider;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.mappingio.format.MappingFormat;
 
 import java.lang.reflect.Type;
@@ -36,9 +38,12 @@ public class MappingProviderSerializer implements JsonSerializer<AbstractMapping
             return new CustomMappingProvider(path, format);
         }
 
+        EnvType env = FabricLoader.getInstance().getEnvironmentType();
+        String envName = env.name().toLowerCase(Locale.ROOT);
+
         String id = json.getAsString().trim().toLowerCase(Locale.ROOT);
         return switch (id) {
-            case "mojang" -> new MojangMappingProvider();
+            case "mojang" -> new MojangMappingProvider(envName);
             case "yarn" -> new YarnMappingProvider();
             case "quilt" -> new QuiltMappingProvider();
             default -> throw new JsonParseException("Invalid mappings id: " + id);

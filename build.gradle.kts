@@ -1,7 +1,8 @@
+import org.gradle.configurationcache.extensions.capitalized
 import java.io.ByteArrayOutputStream
 
 plugins {
-    id("fabric-loom") version "1.1-SNAPSHOT"
+    id("java-library")
     id("maven-publish")
 }
 
@@ -14,47 +15,44 @@ fun getGitCommit(): String {
     return stdout.toString().trim()
 }
 
-version = "1.3.2+fabric.${getGitCommit()}"
-group = "dev.booky"
+tasks["jar"].enabled = false
 
-dependencies {
-    minecraft("com.mojang:minecraft:1.19.4")
-    mappings(loom.officialMojangMappings())
+subprojects {
+    apply<JavaLibraryPlugin>()
+    apply<MavenPublishPlugin>()
 
-    modImplementation("net.fabricmc:fabric-loader:0.14.11")
+    version = "1.3.2+${getGitCommit()}"
+    group = "dev.booky"
 
-    // mappings remapper
-    include(implementation("net.fabricmc:mapping-io:0.3.0")!!)
-}
-
-java {
-    withSourcesJar()
-    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
-}
-
-publishing {
-    publications.create<MavenPublication>("maven") {
-        artifactId = project.name.lowercase()
-        from(components["java"])
+    repositories {
+        mavenCentral()
+        maven("https://maven.fabricmc.net/")
+        maven("https://libraries.minecraft.net/")
     }
-}
 
-tasks {
-    processResources {
-        inputs.property("version", project.version)
-        filesMatching("fabric.mod.json") {
-            expand("version" to project.version)
+    java {
+        withSourcesJar()
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+            vendor.set(JvmVendorSpec.ADOPTIUM)
         }
     }
 
-    withType<JavaCompile> {
-        options.encoding = Charsets.UTF_8.name()
-        options.release.set(17)
+    publishing {
+        publications.create<MavenPublication>("maven") {
+            artifactId = "${rootProject.name}-${project.name}".lowercase()
+            from(components["java"])
+        }
     }
 
-    jar {
-        from("LICENSE") {
-            rename { return@rename "${it}_stackdeobfuscator" }
+    tasks {
+        withType<JavaCompile> {
+            options.encoding = Charsets.UTF_8.name()
+            options.release.set(17)
+        }
+
+        withType<Jar>().configureEach {
+            archiveBaseName.set("${rootProject.name}${project.name.capitalized()}")
         }
     }
 }

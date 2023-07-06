@@ -7,8 +7,9 @@ import dev.booky.stackdeobf.util.CompatUtil;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import org.jetbrains.annotations.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -22,14 +23,14 @@ public final class CachedMappings {
     private CachedMappings() {
     }
 
-    public static void init(AbstractMappingProvider provider) {
+    public static void init(Path gameDir, AbstractMappingProvider provider) {
         CompatUtil.LOGGER.info("Creating asynchronous mapping cache executor...");
         ExecutorService cacheExecutor = Executors.newSingleThreadExecutor(
                 new ThreadFactoryBuilder().setNameFormat("Mappings Cache Thread").setDaemon(true).build());
         long start = System.currentTimeMillis();
 
         // visitor expects mappings to be intermediary -> named
-        provider.cacheMappings(new MappingCacheVisitor(CLASSES, METHODS, FIELDS), cacheExecutor)
+        provider.cacheMappings(gameDir, new MappingCacheVisitor(CLASSES, METHODS, FIELDS), cacheExecutor)
                 .thenAccept($ -> {
                     long timeDiff = System.currentTimeMillis() - start;
                     CompatUtil.LOGGER.info("Cached mappings have been built (took {}ms)", timeDiff);

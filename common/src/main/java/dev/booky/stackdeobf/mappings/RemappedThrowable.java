@@ -1,9 +1,9 @@
 package dev.booky.stackdeobf.mappings;
 // Created by booky10 in StackDeobfuscator (18:03 20.03.23)
 
-import org.jetbrains.annotations.ApiStatus;
-
-@ApiStatus.Internal
+/**
+ * Internal wrapper class.
+ */
 public class RemappedThrowable extends Throwable {
 
     private final Throwable original;

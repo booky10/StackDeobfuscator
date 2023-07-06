@@ -1,3 +1,5 @@
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 rootProject.name = "StackDeobfuscator"
 
 pluginManagement {
@@ -6,3 +8,6 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
+include("common")
+include("fabric")

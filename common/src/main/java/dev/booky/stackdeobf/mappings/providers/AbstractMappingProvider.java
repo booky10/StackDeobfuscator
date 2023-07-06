@@ -3,7 +3,6 @@ package dev.booky.stackdeobf.mappings.providers;
 
 import com.google.common.base.Preconditions;
 import dev.booky.stackdeobf.util.CompatUtil;
-import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.mappingio.MappingVisitor;
 
 import java.io.IOException;
@@ -22,12 +21,12 @@ public abstract class AbstractMappingProvider {
         this.name = name;
     }
 
-    private static Path getCacheDir() {
+    private static Path getCacheDir(Path gameDir) {
         Path cacheDir;
         if (System.getProperties().containsKey("stackdeobf.mappings-cache-dir")) {
             cacheDir = Path.of(System.getProperty("stackdeobf.mappings-cache-dir"));
         } else {
-            cacheDir = FabricLoader.getInstance().getGameDir().resolve("stackdeobf_mappings");
+            cacheDir = gameDir.resolve("stackdeobf_mappings");
         }
 
         if (Files.notExists(cacheDir)) {
@@ -42,8 +41,8 @@ public abstract class AbstractMappingProvider {
         return cacheDir;
     }
 
-    public CompletableFuture<Void> cacheMappings(MappingVisitor visitor, Executor executor) {
-        Path cacheDir = getCacheDir();
+    public CompletableFuture<Void> cacheMappings(Path gameDir, MappingVisitor visitor, Executor executor) {
+        Path cacheDir = getCacheDir(gameDir);
 
         return CompletableFuture.completedFuture(null)
                 .thenComposeAsync($ -> this.downloadMappings(cacheDir, executor), executor)

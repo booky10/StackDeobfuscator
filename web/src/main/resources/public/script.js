@@ -58,7 +58,6 @@ function loadVersions() {
 
         const versions = JSON.parse(req.responseText);
         versions.forEach((version, index) => {
-            console.log(version);
             const option = document.createElement("option");
             option.value = version.world_version;
             option.innerText = version.name;
@@ -112,10 +111,17 @@ function deobfuscate() {
             return;
         }
 
+        let urlTime = req.getResponseHeader("Url-Time");
+        let urlTimeStr = "";
+        if (urlTime) {
+            urlTime = (urlTime / 1000000).toFixed(2);
+            urlTimeStr = `${urlTime}ms getting url, `;
+        }
+
         const mappingsTime = (req.getResponseHeader("Mappings-Time") / 1000000).toFixed(2);
         const remapTime = (req.getResponseHeader("Remap-Time") / 1000000).toFixed(2);
 
-        status.innerText = `Deobfuscating took ${totalTime}ms (${mappingsTime}ms creating mappings, ${remapTime}ms remapping)`;
+        status.innerText = `Deobfuscating took ${totalTime}ms (${mappingsTime}ms creating mappings, ${urlTimeStr}${remapTime}ms remapping)`;
         input.value = req.responseText;
     };
 

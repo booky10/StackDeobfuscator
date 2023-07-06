@@ -13,6 +13,7 @@ import dev.booky.stackdeobf.util.VersionData;
 import io.javalin.Javalin;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
+import io.javalin.http.util.NaiveRateLimit;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -111,6 +112,9 @@ public final class ApiRoutes {
     }
 
     private CompletableFuture<?> handleDeobfUrlReq(Context ctx) {
+        // one request per 10 seconds, should be enough
+        NaiveRateLimit.requestPerTimeUnit(ctx, 6, TimeUnit.MINUTES);
+
         URI uri;
         try {
             uri = URI.create(Objects.requireNonNull(ctx.queryParam("url")));
@@ -139,6 +143,9 @@ public final class ApiRoutes {
     }
 
     private CompletableFuture<?> handleDeobfBodyReq(Context ctx) {
+        // one request per 6 seconds, should be enough
+        NaiveRateLimit.requestPerTimeUnit(ctx, 10, TimeUnit.MINUTES);
+
         long startStep = System.nanoTime();
         return this.getMappings(ctx).thenAccept(mappings -> {
             long remapStep = System.nanoTime();

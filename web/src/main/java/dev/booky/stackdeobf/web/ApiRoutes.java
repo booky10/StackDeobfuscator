@@ -66,7 +66,12 @@ public final class ApiRoutes {
         }
 
         AbstractMappingProvider provider = switch (mappings) {
-            case "yarn" -> new YarnMappingProvider(versionData);
+            case "yarn" -> {
+                if (versionData.getWorldVersion() < 1916) {
+                    throw new BadRequestResponse("Unsupported version for yarn mappings specified: " + version);
+                }
+                yield new YarnMappingProvider(versionData);
+            }
             case "quilt" -> {
                 if (versionData.getWorldVersion() < 2975) {
                     throw new BadRequestResponse("Unsupported version for quilt mappings specified: " + version);

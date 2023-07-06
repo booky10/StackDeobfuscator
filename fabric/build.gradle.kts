@@ -10,6 +10,9 @@ dependencies {
 
     // include common project
     include(implementation(projects.common)!!)
+
+    // "include" doesn't include jars transitively
+    include(libs.fabric.mappingio)
 }
 
 tasks {

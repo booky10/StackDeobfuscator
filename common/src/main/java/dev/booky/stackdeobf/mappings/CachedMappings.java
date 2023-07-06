@@ -12,6 +12,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,35 +30,38 @@ public final class CachedMappings {
 
     public static CompletableFuture<CachedMappings> create(Path cacheDir, AbstractMappingProvider provider) {
         LOGGER.info("Creating asynchronous mapping cache executor...");
-        ExecutorService cacheExecutor = Executors.newSingleThreadExecutor(
+        ExecutorService executor = Executors.newSingleThreadExecutor(
                 new ThreadFactoryBuilder().setNameFormat("Mappings Cache Thread").setDaemon(true).build());
-        long start = System.currentTimeMillis();
 
-        CachedMappings mappings = new CachedMappings();
-
-        // visitor expects mappings to be intermediary -> named
-        MappingCacheVisitor visitor = new MappingCacheVisitor(mappings.classes, mappings.methods, mappings.fields);
-        return provider.cacheMappings(cacheDir, visitor, cacheExecutor)
-                .thenApply($ -> {
-                    long timeDiff = System.currentTimeMillis() - start;
-                    LOGGER.info("Cached mappings have been built (took {}ms)", timeDiff);
-
-                    LOGGER.info("  Classes: " + mappings.classes.size());
-                    LOGGER.info("  Methods: " + mappings.methods.size());
-                    LOGGER.info("  Fields: " + mappings.fields.size());
-
-                    return mappings;
-                })
+        return create(cacheDir, provider, executor)
                 // needs to be executed asynchronously, otherwise the
                 // executor of the current thread would be shut down
                 .whenCompleteAsync(($, throwable) -> {
                     LOGGER.info("Shutting down asynchronous mapping cache executor...");
-                    cacheExecutor.shutdown();
+                    executor.shutdown();
 
                     if (throwable != null) {
                         LOGGER.error("An error occurred while creating mappings cache", throwable);
                     }
                 });
+    }
+
+    public static CompletableFuture<CachedMappings> create(Path cacheDir, AbstractMappingProvider provider, Executor executor) {
+        long start = System.currentTimeMillis();
+        CachedMappings mappings = new CachedMappings();
+
+        // visitor expects mappings to be intermediary -> named
+        MappingCacheVisitor visitor = new MappingCacheVisitor(mappings.classes, mappings.methods, mappings.fields);
+        return provider.cacheMappings(cacheDir, visitor, executor).thenApply($ -> {
+            long timeDiff = System.currentTimeMillis() - start;
+            LOGGER.info("Cached mappings have been built (took {}ms)", timeDiff);
+
+            LOGGER.info("  Classes: " + mappings.classes.size());
+            LOGGER.info("  Methods: " + mappings.methods.size());
+            LOGGER.info("  Fields: " + mappings.fields.size());
+
+            return mappings;
+        });
     }
 
     public @Nullable String remapClass(int id) {

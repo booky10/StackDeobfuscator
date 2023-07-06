@@ -26,6 +26,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.zip.GZIPInputStream;
@@ -57,7 +58,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
         super(versionData, "mojang");
         Preconditions.checkState(versionData.getWorldVersion() >= 2203 || versionData.getWorldVersion() == 1976,
                 "Mojang mappings are only provided by mojang starting from 19w36a (excluding 1.14.4)");
-        this.environment = environment;
+        this.environment = environment.toLowerCase(Locale.ROOT);
         this.intermediary = new IntermediaryMappingProvider(versionData);
 
         LOGGER.warn("By enabling mojang mappings, you agree to their license:");

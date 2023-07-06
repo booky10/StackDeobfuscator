@@ -1,33 +1,67 @@
 package dev.booky.stackdeobf.web;
 // Created by booky10 in StackDeobfuscator (17:02 06.07.23)
 
-import dev.booky.stackdeobf.mappings.CachedMappings;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import dev.booky.stackdeobf.util.VersionData;
 import io.javalin.Javalin;
 import io.javalin.plugin.bundled.CorsPluginConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.DecimalFormat;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 public final class StackDeobfService {
 
     private static final Logger LOGGER = LogManager.getLogger("StackDeobfuscator");
 
-    private final CachedMappings mappings;
     private final String bindAddress;
     private final int port;
 
     private Javalin javalin;
     private boolean running = true;
 
-    public StackDeobfService(CachedMappings mappings, String bindAddress, int port) {
-        this.mappings = mappings;
+    public StackDeobfService(String bindAddress, int port) {
         this.bindAddress = bindAddress;
         this.port = port;
     }
 
+    private static Map<Integer, VersionData> parseVersionData() throws IOException {
+        JsonArray array;
+        try (InputStream input = StackDeobfService.class.getResourceAsStream("/public/mc_versions.json")) {
+            Objects.requireNonNull(input, "No minecraft version data file found in classpath");
+            try (InputStreamReader reader = new InputStreamReader(input)) {
+                array = new Gson().fromJson(reader, JsonArray.class);
+            }
+        }
+
+        Map<Integer, VersionData> versionDataMap = new HashMap<>();
+        for (JsonElement element : array) {
+            VersionData versionData = VersionData.fromJson(element.getAsJsonObject());
+            int key = versionData.getWorldVersion();
+            versionDataMap.put(key, versionData);
+        }
+        return Collections.unmodifiableMap(versionDataMap);
+    }
+
     public void start(long startTime) {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> stop0(null), "Shutdown Handling Thread"));
+
+        LOGGER.info("Parsing minecraft version data...");
+        Map<Integer, VersionData> versionData;
+        try {
+            versionData = parseVersionData();
+        } catch (IOException exception) {
+            throw new RuntimeException("Error while trying to parse minecraft version data", exception);
+        }
 
         LOGGER.info("Creating javalin service...");
         this.javalin = Javalin.create(config -> {
@@ -38,7 +72,7 @@ public final class StackDeobfService {
         });
 
         LOGGER.info("Configuring http routes...");
-        ApiRoutes.register(this.mappings, this.javalin);
+        ApiRoutes.register(this.javalin, versionData);
 
         LOGGER.info("Launching javalin service on {}...", this.bindAddress);
         this.javalin.start(this.bindAddress, this.port);

@@ -14,6 +14,7 @@ dependencies {
     implementation(libs.bundles.builtin)
 
     implementation(libs.javalin)
+    implementation(libs.caffeine)
     implementation(libs.bundles.log4j)
 }
 

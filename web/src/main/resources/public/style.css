@@ -1,0 +1,26 @@
+html {
+    background-color: #161819;
+    color: white;
+    max-width: 1024px;
+    margin: 1em;
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: 100%;
+	grid-gap: 1em;
+}
+
+#input {
+    background-color: #161819;
+    color: white;
+    width: 100%;
+
+    border: 1px solid white;
+    border-radius: 5px;
+    border-width: 2px;
+
+	white-space: pre;
+	overflow-wrap: normal;
+	overflow-x: auto;
+}

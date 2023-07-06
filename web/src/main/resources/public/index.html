@@ -1,9 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="style.css" rel="stylesheet" type="text/css"/>
+    <script src="script.js?v=3" type="text/javascript" defer></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+
     <title>StackDeobfuscator Web</title>
+    <meta name="description" content="Remaps minecraft fabric intermediary mapped stack traces with readable mappings.">
 </head>
+
 <body>
-<h1>Hello World!</h1>
+
+
+<div class="grid">
+    <div>
+        <label for="input"></label>
+        <textarea id="input" autocomplete="off" autocorrect="off" autofocus spellcheck="false"
+                  placeholder="Insert Stacktrace here" rows="42"></textarea>
+    </div>
+
+    <div>
+        <button id="deobfuscate">Deobfuscate</button>
+        <button id="copy">Copy</button>
+    </div>
+
+    <div>
+        <span id="status"></span>
+        <code id="message"></code>
+    </div>
+</div>
+
 </body>
 </html>

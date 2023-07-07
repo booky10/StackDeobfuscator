@@ -32,9 +32,16 @@ jobs:
       - name: build
         run: ./gradlew build --no-daemon
 
-      - name: capture build artifacts
+      - name: capture fabric build artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: stackdeobf-artifacts
-          path: build/libs
+          name: stackdeobf-fabric-artifacts
+          path: fabric/build/libs
+          if-no-files-found: error
+
+      - name: capture web build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: stackdeobf-web-artifacts
+          path: web/build/libs
           if-no-files-found: error

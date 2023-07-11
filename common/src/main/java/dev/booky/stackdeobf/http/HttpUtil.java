@@ -42,10 +42,13 @@ public final class HttpUtil {
     }
 
     public static CompletableFuture<byte[]> getAsync(URI uri, Executor executor) {
-        HttpRequest request = HttpRequest.newBuilder(uri).build();
+        return getAsync(HttpRequest.newBuilder(uri).build(), executor);
+    }
+
+    public static CompletableFuture<byte[]> getAsync(HttpRequest request, Executor executor) {
         HttpResponse.BodyHandler<byte[]> handler = HttpResponse.BodyHandlers.ofByteArray();
 
-        LOGGER.info("Requesting {}...", uri);
+        LOGGER.info("Requesting {}...", request.uri());
         long start = System.currentTimeMillis();
 
         return getHttpClient(executor).sendAsync(request, handler).thenApplyAsync(resp -> {
@@ -54,7 +57,7 @@ public final class HttpUtil {
 
             String message = "Received {} bytes ({}) with status {} from {} in {}ms";
             Object[] args = {bodyBytes.length, FileUtils.byteCountToDisplaySize(bodyBytes.length),
-                    resp.statusCode(), uri, timeDiff};
+                    resp.statusCode(), request.uri(), timeDiff};
 
             if (!isSuccess(resp.statusCode())) {
                 LOGGER.error(message, args);

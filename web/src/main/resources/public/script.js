@@ -30,14 +30,17 @@ function tryFixInputUrl() {
         if (!url.pathname.startsWith("/d") && url.pathname.startsWith("/p")) {
             url.pathname = "/d" + url.pathname.substring("/p".length);
         }
+    } else if (url.host.endsWith("hastebin.com")) {
+        // after toptal bought hastebin.com they completely destroyed the ability to
+        // change the pathname to get the raw file content without authentication... thanks?
+        if (url.pathname.startsWith("/share")) {
+            url.pathname = "/raw" + url.pathname.substring("/share".length);
+        }
     } else if (
             // all haste-servers (before being bought by toptal) and pastebin
             // support simply adding "/raw" at the front of the path
             (url.host.startsWith("haste") || url.host.startsWith("paste"))
-            // after toptal bought hastebin.com they completely destroyed the ability to
-            // change the pathname to get the raw file content... thanks?
-            && !url.host.endsWith("toptal.com") && !url.host.endsWith("hastebin.com")
-            // same for paste.gg, only that they weren't bought by toptal and support multiple files
+            // paste.gg allows storing multiple files, so just ignore this
             && !url.host.endsWith("paste.gg")) {
         if (!url.pathname.startsWith("/raw")) {
             url.pathname = "/raw" + url.pathname;

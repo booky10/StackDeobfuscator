@@ -16,6 +16,7 @@ import io.javalin.http.Context;
 import io.javalin.http.util.NaiveRateLimit;
 
 import java.net.URI;
+import java.net.http.HttpRequest;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
@@ -25,6 +26,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 public final class ApiRoutes {
+
+    private static final String HASTEBIN_API_TOKEN = System.getProperty("web.hastebin-api-token");
 
     private static final Path CACHE_DIR = Path.of(System.getProperty("mappings.cachedir", "mappings"));
     private static final String DEFAULT_MAPPINGS_PROVIDER = "yarn";
@@ -48,7 +51,7 @@ public final class ApiRoutes {
                 .buildAsync(this::loadMapping);
         this.urlCache = Caffeine.newBuilder()
                 .expireAfterAccess(1, TimeUnit.HOURS)
-                .buildAsync((uri, executor) -> HttpUtil.getAsync(uri, executor));
+                .buildAsync(this::loadUrl);
     }
 
     public static void register(Javalin javalin, Map<Integer, VersionData> versionData) {
@@ -89,6 +92,16 @@ public final class ApiRoutes {
         };
 
         return CachedMappings.create(CACHE_DIR, provider, executor);
+    }
+
+    private CompletableFuture<byte[]> loadUrl(URI uri, Executor executor) {
+        HttpRequest.Builder request = HttpRequest.newBuilder(uri);
+        if ("hastebin.com".equals(uri.getHost()) && uri.getPath().startsWith("/raw")) {
+            if (HASTEBIN_API_TOKEN != null) {
+                request.header("Authorization", "Bearer " + HASTEBIN_API_TOKEN);
+            }
+        }
+        return HttpUtil.getAsync(request.build(), executor);
     }
 
     private void register() {

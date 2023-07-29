@@ -1,4 +1,4 @@
-## Future Version
+## v1.4.0
 
 - Handle `/` being used instead of `.` as package separator
     - E.g. `net/minecraft/class_5272` is now remapped correctly

@@ -2448,7 +2448,7 @@
     "protocol_version": 803,
     "pack_version": 6,
     "build_time": "2020-08-26T06:22:29+00:00",
-    "stable": true
+    "stable": false
   },
   {
     "id": "1.16_combat-5",
@@ -2458,7 +2458,7 @@
     "protocol_version": 803,
     "pack_version": 6,
     "build_time": "2020-08-21T09:21:15+00:00",
-    "stable": true
+    "stable": false
   },
   {
     "id": "1.16_combat-4",
@@ -2468,7 +2468,7 @@
     "protocol_version": 803,
     "pack_version": 6,
     "build_time": "2020-08-19T11:12:55+00:00",
-    "stable": true
+    "stable": false
   },
   {
     "id": "1.16_combat-3",
@@ -2478,7 +2478,7 @@
     "protocol_version": 802,
     "pack_version": 6,
     "build_time": "2020-08-14T09:00:12+00:00",
-    "stable": true
+    "stable": false
   },
   {
     "id": "1.16_combat-2",
@@ -2488,7 +2488,7 @@
     "protocol_version": 802,
     "pack_version": 6,
     "build_time": "2020-08-13T11:54:29+00:00",
-    "stable": true
+    "stable": false
   },
   {
     "id": "1.16_combat-1",
@@ -2498,7 +2498,7 @@
     "protocol_version": 802,
     "pack_version": 6,
     "build_time": "2020-08-12T14:05:23+00:00",
-    "stable": true
+    "stable": false
   },
   {
     "id": "1.16.2",
@@ -2538,7 +2538,7 @@
     "protocol_version": 801,
     "pack_version": 5,
     "build_time": "2020-08-07T10:42:45+00:00",
-    "stable": true
+    "stable": false
   },
   {
     "id": "1.16.2-pre3",
@@ -2948,7 +2948,7 @@
     "protocol_version": 601,
     "pack_version": 5,
     "build_time": "2020-01-15T09:44:43+00:00",
-    "stable": true
+    "stable": false
   },
   {
     "id": "1.15.2-pre1",
@@ -2958,7 +2958,7 @@
     "protocol_version": 576,
     "pack_version": 5,
     "build_time": "2020-01-14T16:17:47+00:00",
-    "stable": true
+    "stable": false
   },
   {
     "id": "1.15.1",
@@ -3038,7 +3038,7 @@
     "protocol_version": 600,
     "pack_version": 5,
     "build_time": "2019-11-29T15:39:53+00:00",
-    "stable": true
+    "stable": false
   },
   {
     "id": "1.15-pre3",
@@ -3438,7 +3438,7 @@
     "protocol_version": 480,
     "pack_version": 4,
     "build_time": "2019-05-13T11:08:37+00:00",
-    "stable": false
+    "stable": true
   },
   {
     "id": "1.14.1 Pre-Release 2 / ad7faf9d6db74555b0d56179c0fd1d22",
@@ -3468,7 +3468,7 @@
     "protocol_version": 477,
     "pack_version": 4,
     "build_time": "2019-04-23T14:51:09+00:00",
-    "stable": false
+    "stable": true
   },
   {
     "id": "1.14 Pre-Release 5 / c20937bb9cb248468de8a554f50f7f51",

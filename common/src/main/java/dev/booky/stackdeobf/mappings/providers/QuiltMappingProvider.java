@@ -1,7 +1,6 @@
 package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (22:06 23.03.23)
 
-import com.google.common.base.Preconditions;
 import dev.booky.stackdeobf.http.VerifiableUrl;
 import dev.booky.stackdeobf.util.MavenArtifactInfo;
 import dev.booky.stackdeobf.util.VersionData;
@@ -51,8 +50,9 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
         super(versionData, "quilt", versionData.getWorldVersion() >= 3120
                         ? MAPPINGS_ARTIFACT_POST_1192 : MAPPINGS_ARTIFACT_PRE_1192,
                 VerifiableUrl.HashType.SHA512);
-        Preconditions.checkState(this.versionData.getWorldVersion() >= 2975,
-                "Quilt mappings are only supported for 1.18.2 and higher");
+        if (this.versionData.getWorldVersion() < 2975) {
+            throw new IllegalStateException("Quilt mappings are only supported for 1.18.2 and higher");
+        }
         this.intermediary = new IntermediaryMappingProvider(versionData);
     }
 

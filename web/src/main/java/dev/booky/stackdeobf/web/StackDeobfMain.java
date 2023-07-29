@@ -7,7 +7,7 @@ import org.apache.logging.log4j.io.IoBuilder;
 public final class StackDeobfMain {
 
     private static final String HTTP_BIND = System.getProperty("web.bind", "localhost");
-    private static final int HTTP_PORT = Integer.getInteger("web.port", 8080);
+    private static final int HTTP_PORT = Integer.getInteger("web.port", 8082);
 
     static {
         System.setProperty("java.awt.headless", "true");

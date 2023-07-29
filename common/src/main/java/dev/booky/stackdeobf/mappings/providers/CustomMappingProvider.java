@@ -1,7 +1,6 @@
 package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (17:42 23.03.23)
 
-import com.google.common.base.Preconditions;
 import dev.booky.stackdeobf.util.VersionData;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
@@ -125,8 +124,9 @@ public class CustomMappingProvider extends AbstractMappingProvider {
                     for (Path directory : archive.getRootDirectories()) {
                         try (Stream<Path> files = Files.list(directory)) {
                             for (Path subPath : files.toList()) {
-                                Preconditions.checkState(singlePath == null,
-                                        "More than one file found in " + path.toAbsolutePath());
+                                if (singlePath != null) {
+                                    throw new IllegalStateException("More than one file found in " + path.toAbsolutePath());
+                                }
                                 singlePath = subPath;
                             }
                         }

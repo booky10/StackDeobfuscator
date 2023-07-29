@@ -1,10 +1,9 @@
 package dev.booky.stackdeobf.util;
 // Created by booky10 in StackDeobfuscator (20:21 30.03.23)
 
-import com.google.common.base.Preconditions;
 import dev.booky.stackdeobf.http.VerifiableUrl;
 import org.apache.commons.lang3.StringUtils;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
 import java.util.Objects;
@@ -27,7 +26,9 @@ public class MavenArtifactInfo {
 
     public static MavenArtifactInfo parse(String repoUrl, String info) {
         String[] split = StringUtils.split(info, ':');
-        Preconditions.checkState(split.length == 2 || split.length == 3, "Artifact info is invalid: " + info);
+        if (split.length != 2 && split.length != 3) {
+            throw new IllegalArgumentException("Artifact info is invalid: " + info);
+        }
 
         String groupId = split[0], artifactId = split[1];
         String classifier = split.length > 2 ? split[2] : null;

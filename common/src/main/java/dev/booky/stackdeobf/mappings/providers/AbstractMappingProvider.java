@@ -1,7 +1,6 @@
 package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (14:35 23.03.23)
 
-import com.google.common.base.Preconditions;
 import dev.booky.stackdeobf.util.VersionData;
 import net.fabricmc.mappingio.MappingVisitor;
 import org.apache.logging.log4j.LogManager;
@@ -43,7 +42,9 @@ public abstract class AbstractMappingProvider {
             }
         }
 
-        Preconditions.checkState(Files.isDirectory(cacheDir), cacheDir + " has to be a directory");
+        if (!Files.isDirectory(cacheDir)) {
+            throw new IllegalMonitorStateException(cacheDir + " has to be a directory");
+        }
         return cacheDir;
     }
 

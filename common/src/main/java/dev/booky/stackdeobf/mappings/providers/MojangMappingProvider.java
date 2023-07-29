@@ -1,7 +1,6 @@
 package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (16:57 23.03.23)
 
-import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -56,8 +55,11 @@ public class MojangMappingProvider extends AbstractMappingProvider {
 
     public MojangMappingProvider(VersionData versionData, String environment) {
         super(versionData, "mojang");
-        Preconditions.checkState(versionData.getWorldVersion() >= 2203 || versionData.getWorldVersion() == 1976,
-                "Mojang mappings are only provided by mojang starting from 19w36a (excluding 1.14.4)");
+
+        if (versionData.getWorldVersion() < 2203 && versionData.getWorldVersion() != 1976) {
+            throw new IllegalStateException("Mojang mappings are only provided by mojang starting from 19w36a (excluding 1.14.4)");
+        }
+
         this.environment = environment.toLowerCase(Locale.ROOT);
         this.intermediary = new IntermediaryMappingProvider(versionData);
 

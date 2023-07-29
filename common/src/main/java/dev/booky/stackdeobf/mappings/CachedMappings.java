@@ -1,14 +1,14 @@
 package dev.booky.stackdeobf.mappings;
 // Created by booky10 in StackDeobfuscator (17:04 20.03.23)
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import dev.booky.stackdeobf.mappings.providers.AbstractMappingProvider;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
@@ -31,7 +31,7 @@ public final class CachedMappings {
     public static CompletableFuture<CachedMappings> create(Path cacheDir, AbstractMappingProvider provider) {
         LOGGER.info("Creating asynchronous mapping cache executor...");
         ExecutorService executor = Executors.newSingleThreadExecutor(
-                new ThreadFactoryBuilder().setNameFormat("Mappings Cache Thread").setDaemon(true).build());
+                new BasicThreadFactory.Builder().namingPattern("Mappings Cache Thread #%d").daemon(true).build());
 
         return create(cacheDir, provider, executor)
                 // needs to be executed asynchronously, otherwise the

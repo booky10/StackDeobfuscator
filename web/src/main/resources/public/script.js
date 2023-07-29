@@ -7,8 +7,10 @@ const message = document.getElementById("message");
 const copyButton = document.getElementById("copy");
 const deobfButton = document.getElementById("deobfuscate");
 
-const mappingsSelect = document.getElementById("mappings");
 const versionSelect = document.getElementById("version");
+const stableVersionToggle = document.getElementById("stableversions");
+
+const mappingsSelect = document.getElementById("mappings");
 const environmentSelect = document.getElementById("environment");
 
 // fixes the input url by trying to get the raw content instead of the html webpage
@@ -51,9 +53,25 @@ function tryFixInputUrl() {
     urlInput.value = url.toString();
 }
 
+let onlyStableVersions;
+
+function updateVersions() {
+    onlyStableVersions = stableVersionToggle.checked;
+    for (versionOpt of versionSelect.children) {
+        if (versionOpt.value == "-1") {
+            continue;
+        }
+
+        if (!versionOpt.stable) {
+            versionOpt.style.display = onlyStableVersions ? "none" : null;
+        }
+    }
+}
+this.updateVersions();
+
 function loadVersions() {
     const req = new XMLHttpRequest();
-    req.open("GET", `/mc_versions.json?t=${Date.now()}`, true);
+    req.open("GET", `mc_versions.json?t=${Date.now()}`, true);
     req.onreadystatechange = () => {
         if (req.readyState != 4) {
             return;
@@ -64,6 +82,11 @@ function loadVersions() {
             const option = document.createElement("option");
             option.value = version.world_version;
             option.innerText = version.name;
+
+            option.stable = version.stable;
+            if (onlyStableVersions && !version.stable) {
+                option.style.display = "none";
+            }
             versionSelect.appendChild(option);
         });
         versionSelect.remove(0);
@@ -136,12 +159,12 @@ function deobfuscate() {
 
     const reqParams = `mappings=${mappings}&version=${version}&environment=${environment}`;
     if (urlInput.value.length == 0) {
-        req.open("POST", `/api/v1/deobf/body?${reqParams}`, true);
+        req.open("POST", `api/v1/deobf/body?${reqParams}`, true);
         setHeaders();
         req.send(input.value);
     } else {
         const url = encodeURIComponent(urlInput.value);
-        req.open("GET", `/api/v1/deobf/url?${reqParams}&url=${url}`, true);
+        req.open("GET", `api/v1/deobf/url?${reqParams}&url=${url}`, true);
         setHeaders();
         req.send();
     }

@@ -29,7 +29,7 @@ tasks {
         }
     }
 
-    // no correctly set
+    // not correctly set
     remapJar { archiveBaseName.set(jar.get().archiveBaseName) }
     remapSourcesJar { archiveBaseName.set(jar.get().archiveBaseName) }
 }

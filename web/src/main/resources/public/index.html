@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <link href="style.css" rel="stylesheet" type="text/css"/>
-    <script src="script.js?v=4" type="text/javascript" defer></script>
+    <script src="script.js?v=5" type="text/javascript" defer></script>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
@@ -42,6 +42,9 @@
         <select id="version">
             <option value="-1">Loading...</option>
         </select>
+        <label>
+            <input id="stableversions" type="checkbox" onclick="updateVersions()" checked>Only Stable
+        </label>
     </label>
     <label style="padding-bottom: 1em;">
         Environment:

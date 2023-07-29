@@ -5,7 +5,7 @@ import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import dev.booky.stackdeobf.http.HttpUtil;
+import dev.booky.stackdeobf.http.VerifiableUrl;
 import dev.booky.stackdeobf.util.VersionData;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
@@ -77,7 +77,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
         }
 
         return intermediaryFuture.thenCompose($ -> this.fetchMojangMappingsUri(this.versionData.getId(), executor)
-                .thenCompose(uri -> HttpUtil.getAsync(uri, executor))
+                .thenCompose(verifiableUrl -> verifiableUrl.get(executor))
                 .thenAccept(mappingBytes -> {
                     try (OutputStream fileOutput = Files.newOutputStream(this.path);
                          GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
@@ -88,42 +88,54 @@ public class MojangMappingProvider extends AbstractMappingProvider {
                 }));
     }
 
-    private CompletableFuture<URI> fetchMojangMappingsUri(String mcVersion, Executor executor) {
-        URI manifestUri = URI.create(System.getProperty("stackdeobf.manifest-uri", "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"));
-        return HttpUtil.getAsync(manifestUri, executor).thenCompose(manifestResp -> {
-            JsonObject manifestObj;
-            try (ByteArrayInputStream input = new ByteArrayInputStream(manifestResp);
-                 Reader reader = new InputStreamReader(input)) {
-                manifestObj = GSON.fromJson(reader, JsonObject.class);
-            } catch (IOException exception) {
-                throw new RuntimeException(exception);
-            }
+    private CompletableFuture<VerifiableUrl> fetchMojangMappingsUri(String mcVersion, Executor executor) {
+        URI manifestUri = URI.create(System.getProperty("stackdeobf.manifest-uri",
+                "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"));
 
-            for (JsonElement element : manifestObj.getAsJsonArray("versions")) {
-                JsonObject elementObj = element.getAsJsonObject();
-                if (!mcVersion.equals(elementObj.get("id").getAsString())) {
-                    continue;
-                }
-
-                URI infoUri = URI.create(elementObj.get("url").getAsString());
-                return HttpUtil.getAsync(infoUri, executor).thenApply(infoResp -> {
-                    JsonObject infoObj;
-                    try (ByteArrayInputStream input = new ByteArrayInputStream(infoResp);
+        // the server sends a "content-md5" header containing a md5 hash encoded as a base64-string,
+        // but only if the http method is "HEAD"
+        return VerifiableUrl.resolveByMd5Header(manifestUri, executor)
+                .thenCompose(verifiableUrl -> verifiableUrl.get(executor))
+                .thenCompose(manifestResp -> {
+                    JsonObject manifestObj;
+                    try (ByteArrayInputStream input = new ByteArrayInputStream(manifestResp);
                          Reader reader = new InputStreamReader(input)) {
-                        infoObj = GSON.fromJson(reader, JsonObject.class);
+                        manifestObj = GSON.fromJson(reader, JsonObject.class);
                     } catch (IOException exception) {
                         throw new RuntimeException(exception);
                     }
 
-                    return URI.create(infoObj
-                            .getAsJsonObject("downloads")
-                            .getAsJsonObject(this.environment + "_mappings")
-                            .get("url").getAsString());
-                });
-            }
+                    for (JsonElement element : manifestObj.getAsJsonArray("versions")) {
+                        JsonObject elementObj = element.getAsJsonObject();
+                        if (!mcVersion.equals(elementObj.get("id").getAsString())) {
+                            continue;
+                        }
 
-            throw new IllegalStateException("Invalid minecraft version: " + mcVersion + " (not found in mojang version manifest)");
-        });
+                        URI infoUrl = URI.create(elementObj.get("url").getAsString());
+                        String infoSha1 = elementObj.get("sha1").getAsString();
+                        VerifiableUrl verifiableInfoUrl = new VerifiableUrl(infoUrl, VerifiableUrl.HashType.SHA1, infoSha1);
+
+                        return verifiableInfoUrl.get(executor).thenApply(infoResp -> {
+                            JsonObject infoObj;
+                            try (ByteArrayInputStream input = new ByteArrayInputStream(infoResp);
+                                 Reader reader = new InputStreamReader(input)) {
+                                infoObj = GSON.fromJson(reader, JsonObject.class);
+                            } catch (IOException exception) {
+                                throw new RuntimeException(exception);
+                            }
+
+                            JsonObject mappingsData = infoObj
+                                    .getAsJsonObject("downloads")
+                                    .getAsJsonObject(this.environment + "_mappings");
+                            URI mappingsUrl = URI.create(mappingsData.get("url").getAsString());
+                            String mappingsSha1 = mappingsData.get("sha1").getAsString();
+                            return new VerifiableUrl(mappingsUrl, VerifiableUrl.HashType.SHA1, mappingsSha1);
+                        });
+                    }
+
+                    throw new IllegalStateException("Invalid minecraft version: " + mcVersion
+                            + " (not found in mojang version manifest)");
+                });
     }
 
     @Override

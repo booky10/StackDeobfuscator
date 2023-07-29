@@ -2,7 +2,7 @@ package dev.booky.stackdeobf.mappings.providers;
 // Created by booky10 in StackDeobfuscator (22:06 23.03.23)
 
 import com.google.common.base.Preconditions;
-import dev.booky.stackdeobf.http.HttpUtil;
+import dev.booky.stackdeobf.http.VerifiableUrl;
 import dev.booky.stackdeobf.util.MavenArtifactInfo;
 import dev.booky.stackdeobf.util.VersionData;
 import net.fabricmc.mappingio.MappingReader;
@@ -17,7 +17,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
@@ -50,7 +49,8 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
 
     public QuiltMappingProvider(VersionData versionData) {
         super(versionData, "quilt", versionData.getWorldVersion() >= 3120
-                ? MAPPINGS_ARTIFACT_POST_1192 : MAPPINGS_ARTIFACT_PRE_1192);
+                        ? MAPPINGS_ARTIFACT_POST_1192 : MAPPINGS_ARTIFACT_PRE_1192,
+                VerifiableUrl.HashType.SHA512);
         Preconditions.checkState(this.versionData.getWorldVersion() >= 2975,
                 "Quilt mappings are only supported for 1.18.2 and higher");
         this.intermediary = new IntermediaryMappingProvider(versionData);
@@ -73,18 +73,21 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
             return future;
         }
 
-        URI hashedUri = HASHED_MAPPINGS_ARTIFACT.buildUri(this.versionData.getId(), "jar");
-        LOGGER.info("Downloading hashed {} mappings for {}...", this.name, this.versionData.getId());
-
-        return future.thenCompose($ -> HttpUtil.getAsync(hashedUri, executor).thenAccept(jarBytes -> {
-            byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
-            try (OutputStream fileOutput = Files.newOutputStream(this.hashedPath);
-                 GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
-                gzipOutput.write(mappingBytes);
-            } catch (IOException exception) {
-                throw new RuntimeException(exception);
-            }
-        }));
+        return future
+                .thenCompose($ -> HASHED_MAPPINGS_ARTIFACT.buildVerifiableUrl(this.versionData.getId(), "jar", this.hashType, executor))
+                .thenCompose(verifiableUrl -> {
+                    LOGGER.info("Downloading hashed {} mappings for {}...", this.name, this.versionData.getId());
+                    return verifiableUrl.get(executor);
+                })
+                .thenAccept(jarBytes -> {
+                    byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
+                    try (OutputStream fileOutput = Files.newOutputStream(this.hashedPath);
+                         GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
+                        gzipOutput.write(mappingBytes);
+                    } catch (IOException exception) {
+                        throw new RuntimeException(exception);
+                    }
+                });
     }
 
     @Override
@@ -95,19 +98,21 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
             return future; // 1.19.2+
         }
 
-        return future.thenCompose($ -> this.intermediary.parseMappings0(executor)).thenRun(() -> {
-            MemoryMappingTree mappings = new MemoryMappingTree();
+        return future
+                .thenCompose($ -> this.intermediary.parseMappings0(executor))
+                .thenRun(() -> {
+                    MemoryMappingTree mappings = new MemoryMappingTree();
 
-            try (InputStream fileInput = Files.newInputStream(this.hashedPath);
-                 GZIPInputStream gzipInput = new GZIPInputStream(fileInput);
-                 Reader reader = new InputStreamReader(gzipInput)) {
-                MappingReader.read(reader, MappingFormat.TINY_2, mappings);
-            } catch (IOException exception) {
-                throw new RuntimeException(exception);
-            }
+                    try (InputStream fileInput = Files.newInputStream(this.hashedPath);
+                         GZIPInputStream gzipInput = new GZIPInputStream(fileInput);
+                         Reader reader = new InputStreamReader(gzipInput)) {
+                        MappingReader.read(reader, MappingFormat.TINY_2, mappings);
+                    } catch (IOException exception) {
+                        throw new RuntimeException(exception);
+                    }
 
-            this.hashedMappings = mappings;
-        });
+                    this.hashedMappings = mappings;
+                });
     }
 
     @Override

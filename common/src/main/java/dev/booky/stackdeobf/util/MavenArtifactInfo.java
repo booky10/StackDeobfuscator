@@ -2,11 +2,14 @@ package dev.booky.stackdeobf.util;
 // Created by booky10 in StackDeobfuscator (20:21 30.03.23)
 
 import com.google.common.base.Preconditions;
+import dev.booky.stackdeobf.http.VerifiableUrl;
 import org.apache.commons.lang3.StringUtils;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.net.URI;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 public class MavenArtifactInfo {
 
@@ -32,12 +35,21 @@ public class MavenArtifactInfo {
         return new MavenArtifactInfo(repoUrl, groupId, artifactId, classifier);
     }
 
-    public URI buildMetaUri() {
+    public CompletableFuture<VerifiableUrl> buildVerifiableMetaUrl(VerifiableUrl.HashType hashType, Executor executor) {
+        return VerifiableUrl.resolve(this.buildMetaUrl(), hashType, executor);
+    }
+
+    public URI buildMetaUrl() {
         return URI.create(this.repoUrl + this.groupId.replace('.', '/') +
                 "/" + this.artifactId + "/maven-metadata.xml");
     }
 
-    public URI buildUri(String version, String extension) {
+    public CompletableFuture<VerifiableUrl> buildVerifiableUrl(String version, String extension,
+                                                               VerifiableUrl.HashType hashType, Executor executor) {
+        return VerifiableUrl.resolve(this.buildUrl(version, extension), hashType, executor);
+    }
+
+    public URI buildUrl(String version, String extension) {
         String fileName = this.artifactId + "-" + version +
                 (this.classifier != null ? "-" + this.classifier : "") + "." + extension;
         return URI.create(this.repoUrl + this.groupId.replace('.', '/') +

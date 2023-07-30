@@ -53,6 +53,12 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
         if (this.versionData.getWorldVersion() < 2975) {
             throw new IllegalStateException("Quilt mappings are only supported for 1.18.2 and higher");
         }
+        if ((this.versionData.getWorldVersion() >= 3066 && this.versionData.getWorldVersion() <= 3085)
+                // no a/b april fools mappings :(
+                || this.versionData.getWorldVersion() == 3444) {
+            throw new IllegalStateException("Quilt mappings are not supported for "
+                    + versionData.getName() + " (" + versionData.getWorldVersion() + ")");
+        }
         this.intermediary = new IntermediaryMappingProvider(versionData);
     }
 

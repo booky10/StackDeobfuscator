@@ -77,7 +77,8 @@ public final class ApiRoutes {
                 yield new YarnMappingProvider(versionData);
             }
             case "quilt" -> {
-                if (versionData.getWorldVersion() < 2975) {
+                if (versionData.getWorldVersion() < 2975 || versionData.getWorldVersion() == 3444
+                        || (versionData.getWorldVersion() >= 3066 && versionData.getWorldVersion() <= 3085)) {
                     throw new BadRequestResponse("Unsupported version for quilt mappings specified: " + version);
                 }
                 yield new QuiltMappingProvider(versionData);

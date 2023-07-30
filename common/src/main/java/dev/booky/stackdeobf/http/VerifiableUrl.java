@@ -37,9 +37,13 @@ public final class VerifiableUrl {
     }
 
     public static CompletableFuture<VerifiableUrl> resolve(URI url, HashType hashType, Executor executor) {
+        return resolve(url, hashType, executor, 0);
+    }
+
+    public static CompletableFuture<VerifiableUrl> resolve(URI url, HashType hashType, Executor executor, int depth) {
         LOGGER.info("Downloading {} hash for {}...", hashType, url);
         URI hashUrl = URI.create(url + hashType.getExtension());
-        return HttpUtil.getAsync(hashUrl, executor)
+        return HttpUtil.getAsync(hashUrl, executor, depth)
                 .thenApply(resp -> {
                     // the hash file contains the hash bytes as hex, so this has to be
                     // converted to a string and then parsed to bytes again
@@ -49,34 +53,45 @@ public final class VerifiableUrl {
     }
 
     public static CompletableFuture<VerifiableUrl> resolveByMd5Header(URI url, Executor executor) {
+        return resolveByMd5Header(url, executor, 0);
+    }
+
+    public static CompletableFuture<VerifiableUrl> resolveByMd5Header(URI url, Executor executor, int depth) {
         HttpRequest request = HttpRequest.newBuilder(url)
                 .method("HEAD", HttpRequest.BodyPublishers.noBody())
                 .build();
         HashType hashType = HashType.MD5;
 
-        LOGGER.info("Downloading {} hash for {}...", hashType, url);
-        return HttpUtil.getAsync(request, executor).thenApply(resp -> {
+        LOGGER.info("Downloading {} hash for {}... (try #{})", hashType, url, depth);
+        return HttpUtil.getAsync(request, executor, depth).thenCompose(resp -> {
             // sent by piston-meta server, base64-encoded md5 hash bytes of the response body
             Optional<String> optMd5Hash = resp.getResponse().headers().firstValue("content-md5");
-            optMd5Hash.orElseThrow(() -> new FailedUrlVerificationException("No expected 'content-md5'"
-                    + " header found for " + url));
+            if (optMd5Hash.isEmpty()) {
+                LOGGER.error("No expected 'content-md5' header found for {}; retrying...", url);
+                return resolveByMd5Header(url, executor, depth + 1);
+            }
 
             byte[] md5Bytes = Base64.getDecoder().decode(optMd5Hash.get());
-            return new VerifiableUrl(url, hashType, md5Bytes);
+            return CompletableFuture.completedFuture(new VerifiableUrl(url, hashType, md5Bytes));
         });
     }
 
     public CompletableFuture<HttpResponseContainer> get(Executor executor) {
-        return HttpUtil.getAsync(this.uri, executor).thenApply(resp -> {
+        return get(executor, 0);
+    }
+
+    public CompletableFuture<HttpResponseContainer> get(Executor executor, int depth) {
+        return HttpUtil.getAsync(this.uri, executor, depth).thenCompose(resp -> {
             HashResult hashResult = this.hashType.hash(resp.getBody());
             LOGGER.info("Verifying {} hash {} for {}...",
                     this.hashType, hashResult, this.uri);
 
             if (!hashResult.equals(this.hashResult)) {
-                throw new FailedUrlVerificationException(this.hashType + " hash " + hashResult + " doesn't match "
-                        + this.hashResult + " for " + this.uri);
+                LOGGER.error("{} hash {} doesn't match {} for {}; retrying...",
+                        this.hashType, hashResult, this.hashResult, this.uri);
+                return get(executor, depth + 1);
             }
-            return resp;
+            return CompletableFuture.completedFuture(resp);
         });
     }
 

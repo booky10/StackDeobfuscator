@@ -4,17 +4,26 @@ package dev.booky.stackdeobf.http;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 public final class HttpResponseContainer {
 
     private final HttpRequest request;
     private final HttpResponse<byte[]> response;
     private final Duration duration;
+    private final Supplier<CompletableFuture<HttpResponseContainer>> retry;
 
-    public HttpResponseContainer(HttpRequest request, HttpResponse<byte[]> response, Duration duration) {
+    HttpResponseContainer(HttpRequest request, HttpResponse<byte[]> response, Duration duration,
+                          Supplier<CompletableFuture<HttpResponseContainer>> retry) {
         this.request = request;
         this.response = response;
         this.duration = duration;
+        this.retry = retry;
+    }
+
+    public CompletableFuture<HttpResponseContainer> retry() {
+        return this.retry.get();
     }
 
     public byte[] getBody() {

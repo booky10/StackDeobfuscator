@@ -92,14 +92,21 @@ public class MojangMappingProvider extends AbstractMappingProvider {
 
     @Override
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
-        CompletableFuture<Void> intermediaryFuture = this.intermediary.downloadMappings0(cacheDir, executor);
+        String version;
+        // see comment at AbstractMappingProvider#getFabricatedVersion
+        if (this.versionData.getWorldVersion() == 2836) {
+            version = this.versionData.getName();
+        } else {
+            version = this.versionData.getId();
+        }
 
-        this.path = cacheDir.resolve("mojang_" + this.versionData.getId() + ".gz");
+        CompletableFuture<Void> intermediaryFuture = this.intermediary.downloadMappings0(cacheDir, executor);
+        this.path = cacheDir.resolve("mojang_" + version + ".gz");
         if (Files.exists(this.path)) {
             return intermediaryFuture;
         }
 
-        return intermediaryFuture.thenCompose($ -> this.fetchMojangMappingsUri(this.versionData.getId(), executor)
+        return intermediaryFuture.thenCompose($ -> this.fetchMojangMappingsUri(version, executor)
                 .thenCompose(verifiableUrl -> verifiableUrl.get(executor))
                 .thenAccept(mappingBytes -> {
                     try (OutputStream fileOutput = Files.newOutputStream(this.path);

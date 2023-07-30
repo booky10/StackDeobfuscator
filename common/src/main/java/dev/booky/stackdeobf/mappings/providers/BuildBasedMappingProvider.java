@@ -9,7 +9,6 @@ import net.fabricmc.mappingio.MappingVisitor;
 import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
-import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -26,10 +25,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class BuildBasedMappingProvider extends AbstractMappingProvider {
+
+    private static final Pattern ID_COMMIT_HASH_PATTERN = Pattern.compile("^(.+) / [0-9a-f]{32}$");
 
     protected final MavenArtifactInfo artifactInfo;
     protected final VerifiableUrl.HashType hashType;
@@ -54,8 +57,12 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
         if (this.versionData.getWorldVersion() >= 1963) {
             version = this.versionData.getId();
 
-            // versions before 1.14.2 include the current commit hash in the version.json id
-            version = StringUtils.split(version, ' ')[0];
+            // versions before 1.14.3-pre1 (and some combat tests) include the current
+            // commit hash in the version.json id; just remove it using a regex everywhere
+            Matcher matcher = ID_COMMIT_HASH_PATTERN.matcher(version);
+            if (matcher.matches()) {
+                version = matcher.group(1);
+            }
         } else {
             version = this.versionData.getName();
         }

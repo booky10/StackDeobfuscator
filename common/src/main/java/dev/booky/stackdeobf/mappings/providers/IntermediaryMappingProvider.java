@@ -40,15 +40,16 @@ public class IntermediaryMappingProvider extends AbstractMappingProvider {
 
     @Override
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
-        this.path = cacheDir.resolve("intermediary_" + this.versionData.getId() + ".gz");
+        String fabricatedVersion = getFabricatedVersion(this.versionData);
+
+        this.path = cacheDir.resolve("intermediary_" + fabricatedVersion + ".gz");
         if (Files.exists(this.path)) {
             return CompletableFuture.completedFuture(null);
         }
 
-        String fabricatedVersion = getFabricatedVersion(this.versionData);
         return MAPPINGS_ARTIFACT.buildVerifiableUrl(fabricatedVersion, "jar", HASH_TYPE, executor)
                 .thenCompose(verifiableUrl -> {
-                    LOGGER.info("Downloading intermediary mappings for {}...", this.versionData.getId());
+                    LOGGER.info("Downloading intermediary mappings for {}...", fabricatedVersion);
                     return verifiableUrl.get(executor);
                 })
                 .thenAccept(jarBytes -> {

@@ -2441,36 +2441,6 @@
     "stable": false
   },
   {
-    "id": "1.16_combat-6",
-    "name": "Combat Test 8c",
-    "release_target": "1.16.2",
-    "world_version": 2707,
-    "protocol_version": 803,
-    "pack_version": 6,
-    "build_time": "2020-08-26T06:22:29+00:00",
-    "stable": false
-  },
-  {
-    "id": "1.16_combat-5",
-    "name": "Combat Test 8b",
-    "release_target": "1.16.2",
-    "world_version": 2706,
-    "protocol_version": 803,
-    "pack_version": 6,
-    "build_time": "2020-08-21T09:21:15+00:00",
-    "stable": false
-  },
-  {
-    "id": "1.16_combat-4",
-    "name": "Combat Test 8",
-    "release_target": "1.16.2",
-    "world_version": 2705,
-    "protocol_version": 803,
-    "pack_version": 6,
-    "build_time": "2020-08-19T11:12:55+00:00",
-    "stable": false
-  },
-  {
     "id": "1.16_combat-3",
     "name": "Combat Test 7c",
     "release_target": "1.16.2",
@@ -2478,26 +2448,6 @@
     "protocol_version": 802,
     "pack_version": 6,
     "build_time": "2020-08-14T09:00:12+00:00",
-    "stable": false
-  },
-  {
-    "id": "1.16_combat-2",
-    "name": "Combat Test 7b",
-    "release_target": "1.16.2",
-    "world_version": 2703,
-    "protocol_version": 802,
-    "pack_version": 6,
-    "build_time": "2020-08-13T11:54:29+00:00",
-    "stable": false
-  },
-  {
-    "id": "1.16_combat-1",
-    "name": "Combat Test 7",
-    "release_target": "1.16.2",
-    "world_version": 2702,
-    "protocol_version": 802,
-    "pack_version": 6,
-    "build_time": "2020-08-12T14:05:23+00:00",
     "stable": false
   },
   {

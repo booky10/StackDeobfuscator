@@ -67,6 +67,22 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
             version = this.versionData.getName();
         }
 
+        // the first combat test used a very obscure "id", just replace it manually
+        if ("1.14.3 - Combat Test".equals(version)) {
+            version = "1.14_combat-212796";
+        }
+
+        // these just randomly have dots replaced with underscores, I don't want
+        // to look into why, just do this manually for now
+        //
+        // 1_15_combat-1+build.1 also exists, but is completely gone from maven metadata?
+        switch (version) {
+            // @formatter:off // what are you doing?
+            case "1.15_combat-6", "1.16_combat-0"
+                    -> version = version.replace('.', '_');
+            // @formatter:on
+        }
+
         return this.fetchLatestVersion(cacheDir, version, executor)
                 .thenCompose(build -> {
                     this.path = cacheDir.resolve(this.name + "_" + build + ".gz");

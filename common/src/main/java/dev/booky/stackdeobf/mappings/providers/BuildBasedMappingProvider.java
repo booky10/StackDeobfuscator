@@ -64,8 +64,8 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
                                 LOGGER.info("Downloading {} mappings jar for build {}...", this.name, build);
                                 return verifiableUrl.get(executor);
                             })
-                            .thenAccept(mappingJarBytes -> {
-                                byte[] mappingBytes = this.extractPackagedMappings(mappingJarBytes);
+                            .thenAccept(resp -> {
+                                byte[] mappingBytes = this.extractPackagedMappings(resp.getBody());
                                 try (OutputStream fileOutput = Files.newOutputStream(this.path);
                                      GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
                                     gzipOutput.write(mappingBytes);
@@ -102,42 +102,41 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
             return this.artifactInfo.buildVerifiableMetaUrl(this.hashType, executor).thenCompose(verifiableUrl -> {
                 LOGGER.info("Fetching latest {} build...", this.name);
                 return verifiableUrl.get(executor).thenApply(resp -> {
-                    try (InputStream input = new ByteArrayInputStream(resp)) {
-                        Document document;
-                        try {
-                            // https://stackoverflow.com/a/14968272
-                            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                            document = factory.newDocumentBuilder().parse(input);
-                        } catch (ParserConfigurationException | SAXException exception) {
-                            throw new IOException(exception);
-                        }
-
-                        NodeList versions = document.getElementsByTagName("version");
-                        for (int i = versions.getLength() - 1; i >= 0; i--) {
-                            String version = versions.item(i).getTextContent();
-                            if (!version.startsWith(mcVersion + "+")) {
-                                // 19w14b and before have this formatting
-                                if (!version.startsWith(mcVersion + ".")) {
-                                    continue;
-                                }
-
-                                if (version.substring((mcVersion + ".").length()).indexOf('.') != -1) {
-                                    // mcVersion is something like "1.19" and version is something like "1.19.4+build.1"
-                                    // this prevents this being recognized as a valid mapping
-                                    continue;
-                                }
-                            }
-
-                            Files.writeString(versionCachePath, version);
-                            LOGGER.info("Cached latest {} build version: {}", this.name, version);
-
-                            return version;
-                        }
-
-                        throw new IllegalArgumentException("Can't find " + this.name + " mappings for minecraft version " + mcVersion);
-                    } catch (IOException exception) {
+                    Document document;
+                    try (InputStream input = new ByteArrayInputStream(resp.getBody())) {
+                        // https://stackoverflow.com/a/14968272
+                        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                        document = factory.newDocumentBuilder().parse(input);
+                    } catch (IOException | ParserConfigurationException | SAXException exception) {
                         throw new RuntimeException("Can't parse response from " + verifiableUrl.getUrl() + " for " + mcVersion, exception);
                     }
+
+                    NodeList versions = document.getElementsByTagName("version");
+                    for (int i = versions.getLength() - 1; i >= 0; i--) {
+                        String version = versions.item(i).getTextContent();
+                        if (!version.startsWith(mcVersion + "+")) {
+                            // 19w14b and before have this formatting
+                            if (!version.startsWith(mcVersion + ".")) {
+                                continue;
+                            }
+
+                            if (version.substring((mcVersion + ".").length()).indexOf('.') != -1) {
+                                // mcVersion is something like "1.19" and version is something like "1.19.4+build.1"
+                                // this prevents this being recognized as a valid mapping
+                                continue;
+                            }
+                        }
+
+                        try {
+                            Files.writeString(versionCachePath, version);
+                        } catch (IOException exception) {
+                            throw new RuntimeException("Can't write cache file for version " + version, exception);
+                        }
+                        LOGGER.info("Cached latest {} build version: {}", this.name, version);
+
+                        return version;
+                    }
+                    throw new IllegalArgumentException("Can't find " + this.name + " mappings for minecraft version " + mcVersion);
                 });
             });
         }, executor);

@@ -92,8 +92,8 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
                     LOGGER.info("Downloading hashed {} mappings for {}...", this.name, this.versionData.getId());
                     return verifiableUrl.get(executor);
                 })
-                .thenAccept(jarBytes -> {
-                    byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
+                .thenAccept(resp -> {
+                    byte[] mappingBytes = this.extractPackagedMappings(resp.getBody());
                     try (OutputStream fileOutput = Files.newOutputStream(this.hashedPath);
                          GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
                         gzipOutput.write(mappingBytes);

@@ -3,6 +3,7 @@ package dev.booky.stackdeobf.web;
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import dev.booky.stackdeobf.http.HttpResponseContainer;
 import dev.booky.stackdeobf.http.HttpUtil;
 import dev.booky.stackdeobf.mappings.CachedMappings;
 import dev.booky.stackdeobf.mappings.providers.AbstractMappingProvider;
@@ -110,7 +111,8 @@ public final class ApiRoutes {
                 request.header("Authorization", "Bearer " + HASTEBIN_API_TOKEN);
             }
         }
-        return HttpUtil.getAsync(request.build(), executor);
+        return HttpUtil.getAsync(request.build(), executor)
+                .thenApply(HttpResponseContainer::getBody);
     }
 
     private void register() {

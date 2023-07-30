@@ -1,7 +1,6 @@
 package dev.booky.stackdeobf.http;
 // Created by booky10 in StackDeobfuscator (01:57 10.06.23)
 
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -41,10 +40,10 @@ public final class VerifiableUrl {
         LOGGER.info("Downloading {} hash for {}...", hashType, url);
         URI hashUrl = URI.create(url + hashType.getExtension());
         return HttpUtil.getAsync(hashUrl, executor)
-                .thenApply(hashStrBytes -> {
+                .thenApply(resp -> {
                     // the hash file contains the hash bytes as hex, so this has to be
                     // converted to a string and then parsed to bytes again
-                    String hashStr = new String(hashStrBytes);
+                    String hashStr = new String(resp.getBody());
                     return new VerifiableUrl(url, hashType, hashStr);
                 });
     }
@@ -56,19 +55,7 @@ public final class VerifiableUrl {
         HashType hashType = HashType.MD5;
 
         LOGGER.info("Downloading {} hash for {}...", hashType, url);
-        return HttpUtil.getAsyncRaw(request, executor).thenApply(resp -> {
-            byte[] bodyBytes = resp.getRespBody();
-
-            String message = "Received {} bytes ({}) with status {} from {} {} in {}ms";
-            Object[] args = {bodyBytes.length, FileUtils.byteCountToDisplaySize(bodyBytes.length),
-                    resp.getRespCode(), request.method(), url, resp.getDurationMs()};
-
-            if (!HttpUtil.isSuccess(resp.getRespCode())) {
-                LOGGER.error(message, args);
-                throw new FailedHttpRequestException(resp.getResponse());
-            }
-            LOGGER.info(message, args);
-
+        return HttpUtil.getAsync(request, executor).thenApply(resp -> {
             // sent by piston-meta server, base64-encoded md5 hash bytes of the response body
             Optional<String> optMd5Hash = resp.getResponse().headers().firstValue("content-md5");
             optMd5Hash.orElseThrow(() -> new FailedUrlVerificationException("No expected 'content-md5'"
@@ -79,9 +66,9 @@ public final class VerifiableUrl {
         });
     }
 
-    public CompletableFuture<byte[]> get(Executor executor) {
-        return HttpUtil.getAsync(this.uri, executor).thenApply(bytes -> {
-            HashResult hashResult = this.hashType.hash(bytes);
+    public CompletableFuture<HttpResponseContainer> get(Executor executor) {
+        return HttpUtil.getAsync(this.uri, executor).thenApply(resp -> {
+            HashResult hashResult = this.hashType.hash(resp.getBody());
             LOGGER.info("Verifying {} hash {} for {}...",
                     this.hashType, hashResult, this.uri);
 
@@ -89,7 +76,7 @@ public final class VerifiableUrl {
                 throw new FailedUrlVerificationException(this.hashType + " hash " + hashResult + " doesn't match "
                         + this.hashResult + " for " + this.uri);
             }
-            return bytes;
+            return resp;
         });
     }
 

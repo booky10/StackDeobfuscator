@@ -52,8 +52,8 @@ public class IntermediaryMappingProvider extends AbstractMappingProvider {
                     LOGGER.info("Downloading intermediary mappings for {}...", fabricatedVersion);
                     return verifiableUrl.get(executor);
                 })
-                .thenAccept(jarBytes -> {
-                    byte[] mappingBytes = this.extractPackagedMappings(jarBytes);
+                .thenAccept(resp -> {
+                    byte[] mappingBytes = this.extractPackagedMappings(resp.getBody());
                     try (OutputStream fileOutput = Files.newOutputStream(this.path);
                          GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
                         gzipOutput.write(mappingBytes);

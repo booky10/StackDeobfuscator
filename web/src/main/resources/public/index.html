@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
     <link href="style.css" rel="stylesheet" type="text/css"/>
-    <script src="script.js?v=5" type="text/javascript" defer></script>
+    <script defer src="script.js?v=5" type="text/javascript"></script>
 
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
     <meta charset="UTF-8">
 
     <title>StackDeobfuscator Web</title>
-    <meta name="description" content="Remaps minecraft fabric intermediary mapped stack traces with readable mappings.">
+    <meta content="Remaps minecraft fabric intermediary mapped stack traces with readable mappings." name="description">
 </head>
 
 <body>
@@ -17,15 +17,15 @@
 <div class="grid">
     <div>
         <label>
-            <textarea id="input" autocomplete="off" autocorrect="off" autofocus spellcheck="false"
-                      placeholder="Insert Stacktrace here" rows="42"></textarea>
+            <textarea autocomplete="off" autocorrect="off" autofocus id="input" placeholder="Insert Stacktrace here"
+                      rows="42" spellcheck="false"></textarea>
         </label>
     </div>
 
     <div>
         <label>
-            <input id="urlinput" autocomplete="off" autocorrect="off" spellcheck="false"
-                   placeholder="Insert Log URL here (WARNING: WILL REPLACE TEXT INPUT)" style="width: 100%">
+            <input autocomplete="off" autocorrect="off" id="urlinput" placeholder="Insert Log URL here (WARNING: WILL REPLACE TEXT INPUT)"
+                   spellcheck="false" style="width: 100%">
         </label>
     </div>
 
@@ -43,7 +43,7 @@
             <option value="-1">Loading...</option>
         </select>
         <label>
-            <input id="stableversions" type="checkbox" onclick="updateVersions()" checked>Only Stable
+            <input checked id="stableversions" onclick="updateVersions()" type="checkbox">Only Stable
         </label>
     </label>
     <label style="padding-bottom: 1em;">

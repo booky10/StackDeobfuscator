@@ -112,10 +112,10 @@ public class MojangMappingProvider extends AbstractMappingProvider {
 
         return intermediaryFuture.thenCompose($ -> this.fetchMojangMappingsUri(version, executor)
                 .thenCompose(verifiableUrl -> verifiableUrl.get(executor))
-                .thenAccept(mappingBytes -> {
+                .thenAccept(resp -> {
                     try (OutputStream fileOutput = Files.newOutputStream(this.path);
                          GZIPOutputStream gzipOutput = new GZIPOutputStream(fileOutput)) {
-                        gzipOutput.write(mappingBytes);
+                        gzipOutput.write(resp.getBody());
                     } catch (IOException exception) {
                         throw new RuntimeException(exception);
                     }
@@ -127,9 +127,9 @@ public class MojangMappingProvider extends AbstractMappingProvider {
         VerifiableUrl staticUrl = STATIC_MINECRAFT_EXPERIMENTS.get(mcVersion);
         if (staticUrl != null) {
             LOGGER.warn("Static url found for {}, using {} for downloading", mcVersion, staticUrl.getUrl());
-            return staticUrl.get(executor).thenApply(profileContainerZip -> {
+            return staticUrl.get(executor).thenApply(resp -> {
                 JsonObject infoObj = null;
-                try (ByteArrayInputStream input = new ByteArrayInputStream(profileContainerZip);
+                try (ByteArrayInputStream input = new ByteArrayInputStream(resp.getBody());
                      ZipInputStream zipInput = new ZipInputStream(input)) {
                     ZipEntry entry;
                     while ((entry = zipInput.getNextEntry()) != null) {
@@ -168,7 +168,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
                 .thenCompose(verifiableUrl -> verifiableUrl.get(executor))
                 .thenCompose(manifestResp -> {
                     JsonObject manifestObj;
-                    try (ByteArrayInputStream input = new ByteArrayInputStream(manifestResp);
+                    try (ByteArrayInputStream input = new ByteArrayInputStream(manifestResp.getBody());
                          Reader reader = new InputStreamReader(input)) {
                         manifestObj = GSON.fromJson(reader, JsonObject.class);
                     } catch (IOException exception) {
@@ -187,7 +187,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
 
                         return verifiableInfoUrl.get(executor).thenApply(infoResp -> {
                             JsonObject infoObj;
-                            try (ByteArrayInputStream input = new ByteArrayInputStream(infoResp);
+                            try (ByteArrayInputStream input = new ByteArrayInputStream(infoResp.getBody());
                                  Reader reader = new InputStreamReader(input)) {
                                 infoObj = GSON.fromJson(reader, JsonObject.class);
                             } catch (IOException exception) {

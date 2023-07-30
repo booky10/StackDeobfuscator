@@ -44,13 +44,16 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
 
     @Override
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
+        String version;
         // after 1.14.2, fabric switched to using the version id instead of the name for yarn versions
-        String version = this.versionData.getWorldVersion() >= 1963
-                ? this.versionData.getId() : this.versionData.getName();
+        if (this.versionData.getWorldVersion() >= 1963) {
+            version = this.versionData.getId();
 
-        // versions somewhere before mojang mappings (I don't have decompiled mc versions
-        // before mojang mappings) include the current commit hash in the version.json name
-        version = StringUtils.split(version, ' ')[0];
+            // versions before 1.14.2 include the current commit hash in the version.json id
+            version = StringUtils.split(version, ' ')[0];
+        } else {
+            version = this.versionData.getName();
+        }
 
         return this.fetchLatestVersion(cacheDir, version, executor)
                 .thenCompose(build -> {

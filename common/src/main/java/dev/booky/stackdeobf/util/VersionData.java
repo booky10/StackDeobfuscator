@@ -22,12 +22,14 @@ public final class VersionData {
     private final String id;
     private final String name;
     private final int worldVersion;
+    private final int protocolVersion;
     private final OffsetDateTime buildTime;
 
-    private VersionData(String id, String name, int worldVersion, OffsetDateTime buildTime) {
+    private VersionData(String id, String name, int worldVersion, int protocolVersion, OffsetDateTime buildTime) {
         this.id = id;
         this.name = name;
         this.worldVersion = worldVersion;
+        this.protocolVersion = protocolVersion;
         this.buildTime = buildTime;
     }
 
@@ -54,12 +56,13 @@ public final class VersionData {
         String id = object.get("id").getAsString();
         String name = object.get("name").getAsString();
         int worldVersion = object.get("world_version").getAsInt();
+        int protocolVersion = object.get("protocol_version").getAsInt();
 
         String buildTimeStr = object.get("build_time").getAsString();
         DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
         OffsetDateTime buildTime = OffsetDateTime.parse(buildTimeStr, formatter);
 
-        return new VersionData(id, name, worldVersion, buildTime);
+        return new VersionData(id, name, worldVersion, protocolVersion, buildTime);
     }
 
     public String getId() {
@@ -74,7 +77,16 @@ public final class VersionData {
         return this.worldVersion;
     }
 
+    public int getProtocolVersion() {
+        return this.protocolVersion;
+    }
+
     public OffsetDateTime getBuildTime() {
         return this.buildTime;
+    }
+
+    @Override
+    public String toString() {
+        return "VersionData{id='" + this.id + '\'' + ", name='" + this.name + '\'' + ", worldVersion=" + this.worldVersion + ", protocolVersion=" + this.protocolVersion + ", buildTime=" + this.buildTime + '}';
     }
 }

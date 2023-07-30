@@ -34,6 +34,10 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static dev.booky.stackdeobf.util.VersionConstants.V19W36A;
+import static dev.booky.stackdeobf.util.VersionConstants.V1_14_4;
+import static dev.booky.stackdeobf.util.VersionConstants.V21W39A;
+
 public class MojangMappingProvider extends AbstractMappingProvider {
 
     // taken from https://github.com/PrismLauncher/meta/blob/63194d47e829a8c072e5a40dac37863a21d1b11d/static/mojang/minecraft-experiments.json
@@ -77,7 +81,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
     public MojangMappingProvider(VersionData versionData, String environment) {
         super(versionData, "mojang");
 
-        if (versionData.getWorldVersion() < 2203 && versionData.getWorldVersion() != 1976) {
+        if (versionData.getWorldVersion() < V19W36A && versionData.getWorldVersion() != V1_14_4) {
             throw new IllegalStateException("Mojang mappings are only provided by mojang starting from 19w36a (excluding 1.14.4)");
         }
 
@@ -94,7 +98,7 @@ public class MojangMappingProvider extends AbstractMappingProvider {
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
         String version;
         // see comment at AbstractMappingProvider#getFabricatedVersion
-        if (this.versionData.getWorldVersion() == 2836) {
+        if (this.versionData.getWorldVersion() == V21W39A) {
             version = this.versionData.getName();
         } else {
             version = this.versionData.getId();

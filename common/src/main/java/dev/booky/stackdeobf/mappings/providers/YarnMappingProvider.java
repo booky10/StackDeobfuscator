@@ -10,6 +10,12 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.EnumSet;
 import java.util.Set;
 
+import static dev.booky.stackdeobf.util.VersionConstants.V19W34A;
+import static dev.booky.stackdeobf.util.VersionConstants.V19W44A;
+import static dev.booky.stackdeobf.util.VersionConstants.V19W45A;
+import static dev.booky.stackdeobf.util.VersionConstants.V1_14_4;
+import static dev.booky.stackdeobf.util.VersionConstants.V20W06A;
+
 public class YarnMappingProvider extends BuildBasedMappingProvider {
 
     private static final String REPO_URL = System.getProperty("stackdeobf.yarn.repo-url", "https://maven.fabricmc.net");
@@ -25,7 +31,7 @@ public class YarnMappingProvider extends BuildBasedMappingProvider {
 
     private static Set<QuirkFlag> getVersionQuirks(VersionData versionData) {
         Set<QuirkFlag> flags = EnumSet.noneOf(QuirkFlag.class);
-        if (versionData.getWorldVersion() < 1976) {
+        if (versionData.getWorldVersion() < V1_14_4) {
             // first actual tiny v2 build (with a checksum!) was at 1.14.4 build 15
             flags.add(QuirkFlag.NO_V2);
             // https://github.com/FabricMC/yarn/commit/426494576c3aa1e05deb2dadb90b3f0f1c7bc37b
@@ -35,7 +41,7 @@ public class YarnMappingProvider extends BuildBasedMappingProvider {
             if (StringUtils.containsIgnoreCase(versionData.getId(), "combat")
                     // I don't know why, but these versions also don't have v2 or
                     // sha512 checksums (from 19w34a build 1 till 19w44a build 8)
-                    || (versionData.getWorldVersion() >= 2200 && versionData.getWorldVersion() <= 2213)) {
+                    || (versionData.getWorldVersion() >= V19W34A && versionData.getWorldVersion() <= V19W44A)) {
                 flags.add(QuirkFlag.NO_V2);
                 flags.add(QuirkFlag.NO_SHA512);
             } else {
@@ -43,7 +49,7 @@ public class YarnMappingProvider extends BuildBasedMappingProvider {
                 // but not with sha512, only with spigot guy + sha1
                 //
                 // they spawn in again starting with 20w06a build 1
-                if (versionData.getWorldVersion() >= 2214 && versionData.getWorldVersion() <= 2504) {
+                if (versionData.getWorldVersion() >= V19W45A && versionData.getWorldVersion() <= V20W06A) {
                     flags.add(QuirkFlag.NO_SHA512);
                 }
             }

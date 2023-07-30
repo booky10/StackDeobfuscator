@@ -9,6 +9,8 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import java.util.List;
 import java.util.Set;
 
+import static dev.booky.stackdeobf.util.VersionConstants.V1_18_PRE7;
+
 public class StackDeobfMixinPlugin implements IMixinConfigPlugin {
 
     @Override
@@ -23,8 +25,7 @@ public class StackDeobfMixinPlugin implements IMixinConfigPlugin {
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         if (mixinClassName.endsWith("ThreadingDetectorMixin")) {
-            // added in 1.18-pre7
-            return StackDeobfMod.getVersionData().getWorldVersion() >= 2854;
+            return StackDeobfMod.getVersionData().getWorldVersion() >= V1_18_PRE7;
         }
         return true;
     }

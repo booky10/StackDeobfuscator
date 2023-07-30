@@ -25,6 +25,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
+import static dev.booky.stackdeobf.util.VersionConstants.V18W49A;
+import static dev.booky.stackdeobf.util.VersionConstants.V19W36A;
+import static dev.booky.stackdeobf.util.VersionConstants.V1_14_4;
+import static dev.booky.stackdeobf.util.VersionConstants.V1_18_2;
+import static dev.booky.stackdeobf.util.VersionConstants.V1_19_DEEP_DARK_EXPERIMENTAL_SNAPSHOT_1;
+import static dev.booky.stackdeobf.util.VersionConstants.V22W13A;
+import static dev.booky.stackdeobf.util.VersionConstants.V23W13A_OR_B;
+
 public final class ApiRoutes {
 
     private static final String HASTEBIN_API_TOKEN = System.getProperty("web.hastebin-api-token");
@@ -71,20 +79,20 @@ public final class ApiRoutes {
 
         AbstractMappingProvider provider = switch (mappings) {
             case "yarn" -> {
-                if (versionData.getWorldVersion() < 1916) {
+                if (versionData.getWorldVersion() < V18W49A) {
                     throw new BadRequestResponse("Unsupported version for yarn mappings specified: " + version);
                 }
                 yield new YarnMappingProvider(versionData);
             }
             case "quilt" -> {
-                if (versionData.getWorldVersion() < 2975 || versionData.getWorldVersion() == 3444
-                        || (versionData.getWorldVersion() >= 3066 && versionData.getWorldVersion() <= 3085)) {
+                if (versionData.getWorldVersion() < V1_18_2 || versionData.getWorldVersion() == V23W13A_OR_B
+                        || (versionData.getWorldVersion() >= V1_19_DEEP_DARK_EXPERIMENTAL_SNAPSHOT_1 && versionData.getWorldVersion() <= V22W13A)) {
                     throw new BadRequestResponse("Unsupported version for quilt mappings specified: " + version);
                 }
                 yield new QuiltMappingProvider(versionData);
             }
             case "mojang" -> {
-                if (versionData.getWorldVersion() < 2203 && versionData.getWorldVersion() != 1976) {
+                if (versionData.getWorldVersion() < V19W36A && versionData.getWorldVersion() != V1_14_4) {
                     throw new BadRequestResponse("Unsupported version for mojang mappings specified: " + version);
                 }
                 yield new MojangMappingProvider(versionData, environment);

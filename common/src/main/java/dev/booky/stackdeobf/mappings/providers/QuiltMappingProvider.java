@@ -23,6 +23,12 @@ import java.util.concurrent.Executor;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static dev.booky.stackdeobf.util.VersionConstants.V1_18_2;
+import static dev.booky.stackdeobf.util.VersionConstants.V1_19_2;
+import static dev.booky.stackdeobf.util.VersionConstants.V1_19_DEEP_DARK_EXPERIMENTAL_SNAPSHOT_1;
+import static dev.booky.stackdeobf.util.VersionConstants.V22W13A;
+import static dev.booky.stackdeobf.util.VersionConstants.V23W13A_OR_B;
+
 public final class QuiltMappingProvider extends BuildBasedMappingProvider {
 
     private static final String REPO_URL = System.getProperty("stackdeobf.quilt.repo-url", "https://maven.quiltmc.org/repository/release");
@@ -47,15 +53,14 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
     private MemoryMappingTree hashedMappings;
 
     public QuiltMappingProvider(VersionData versionData) {
-        super(versionData, "quilt", versionData.getWorldVersion() >= 3120
+        super(versionData, "quilt", versionData.getWorldVersion() >= V1_19_2
                         ? MAPPINGS_ARTIFACT_POST_1192 : MAPPINGS_ARTIFACT_PRE_1192,
                 VerifiableUrl.HashType.SHA512);
-        if (this.versionData.getWorldVersion() < 2975) {
+        if (this.versionData.getWorldVersion() < V1_18_2) {
             throw new IllegalStateException("Quilt mappings are only supported for 1.18.2 and higher");
         }
-        if ((this.versionData.getWorldVersion() >= 3066 && this.versionData.getWorldVersion() <= 3085)
-                // no a/b april fools mappings :(
-                || this.versionData.getWorldVersion() == 3444) {
+        if ((this.versionData.getWorldVersion() >= V1_19_DEEP_DARK_EXPERIMENTAL_SNAPSHOT_1 && this.versionData.getWorldVersion() <= V22W13A)
+                || this.versionData.getWorldVersion() == V23W13A_OR_B) {
             throw new IllegalStateException("Quilt mappings are not supported for "
                     + versionData.getName() + " (" + versionData.getWorldVersion() + ")");
         }
@@ -66,8 +71,10 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
         CompletableFuture<Void> future = super.downloadMappings0(cacheDir, executor);
 
-        if (this.versionData.getWorldVersion() >= 3120) {
-            return future; // 1.19.2+
+        if (this.versionData.getWorldVersion() >= V1_19_2) {
+            // quilt already provides intermediary -> quilt mappings starting with 1.19.2,
+            // don't make things too complex if not necessary
+            return future;
         }
 
         // see comment at field declaration for reason
@@ -100,8 +107,8 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
     protected CompletableFuture<Void> parseMappings0(Executor executor) {
         CompletableFuture<Void> future = super.parseMappings0(executor);
 
-        if (this.versionData.getWorldVersion() >= 3120) {
-            return future; // 1.19.2+
+        if (this.versionData.getWorldVersion() >= V1_19_2) {
+            return future; // see comment at method above
         }
 
         return future
@@ -123,8 +130,8 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
 
     @Override
     protected CompletableFuture<Void> visitMappings0(MappingVisitor visitor, Executor executor) {
-        if (this.versionData.getWorldVersion() >= 3120) {
-            return super.visitMappings0(visitor, executor); // 1.19.2+
+        if (this.versionData.getWorldVersion() >= V1_19_2) {
+            return super.visitMappings0(visitor, executor); // see comment at method above the above method
         }
 
         return CompletableFuture.supplyAsync(() -> {

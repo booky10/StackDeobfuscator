@@ -10,6 +10,7 @@ import java.util.Map;
 public class MappingCacheVisitor implements MappingVisitor {
 
     private final Map<Integer, String> classes, methods, fields;
+    private int dstNamespaceId = 0;
 
     private String srcClassName;
     private String srcMethodName;
@@ -23,6 +24,10 @@ public class MappingCacheVisitor implements MappingVisitor {
 
     @Override
     public void visitNamespaces(String srcNamespace, List<String> dstNamespaces) {
+        int namedIndex = dstNamespaces.indexOf("named");
+        if (namedIndex != -1) {
+            this.dstNamespaceId = namedIndex;
+        }
     }
 
     @Override
@@ -45,16 +50,20 @@ public class MappingCacheVisitor implements MappingVisitor {
 
     @Override
     public boolean visitMethodArg(int argPosition, int lvIndex, String srcName) {
-        return true;
+        return false;
     }
 
     @Override
     public boolean visitMethodVar(int lvtRowIndex, int lvIndex, int startOpIdx, String srcName) {
-        return true;
+        return false;
     }
 
     @Override
     public void visitDstName(MappedElementKind targetKind, int namespace, String name) {
+        if (this.dstNamespaceId != namespace) {
+            return;
+        }
+
         switch (targetKind) {
             case CLASS -> {
                 String srcName = this.srcClassName;

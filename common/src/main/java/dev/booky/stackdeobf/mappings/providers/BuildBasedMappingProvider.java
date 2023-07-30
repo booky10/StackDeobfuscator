@@ -6,6 +6,7 @@ import dev.booky.stackdeobf.util.MavenArtifactInfo;
 import dev.booky.stackdeobf.util.VersionData;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
+import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +41,10 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
         super(versionData, name);
         this.artifactInfo = artifactInfo;
         this.hashType = hashType;
+    }
+
+    protected MappingFormat getMappingFormat() {
+        return MappingFormat.TINY_2;
     }
 
     @Override
@@ -157,12 +162,27 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
             try (InputStream fileInput = Files.newInputStream(this.path);
                  GZIPInputStream gzipInput = new GZIPInputStream(fileInput);
                  Reader reader = new InputStreamReader(gzipInput)) {
-                MappingReader.read(reader, MappingFormat.TINY_2, mappings);
+                MappingReader.read(reader, this.getMappingFormat(), mappings);
             } catch (IOException exception) {
                 throw new RuntimeException(exception);
             }
 
-            this.mappings = mappings;
+            // tiny v1 mappings format is official -> intermediary/named
+            // this has to be switched, so it is intermediary -> official/named
+            MemoryMappingTree reorderedMappings;
+            if (!"intermediary".equals(mappings.getSrcNamespace())
+                    && mappings.getDstNamespaces().contains("intermediary")) {
+                try {
+                    reorderedMappings = new MemoryMappingTree();
+                    mappings.accept(new MappingSourceNsSwitch(reorderedMappings, "intermediary"));
+                } catch (IOException exception) {
+                    throw new RuntimeException("Error while switching namespaces", exception);
+                }
+            } else {
+                reorderedMappings = mappings;
+            }
+
+            this.mappings = reorderedMappings;
             return null;
         }, executor);
     }

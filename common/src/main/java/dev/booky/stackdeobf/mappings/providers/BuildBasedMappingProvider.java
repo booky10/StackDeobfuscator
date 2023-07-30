@@ -54,7 +54,11 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
         String version;
         // after 1.14.2, fabric switched to using the version id instead of the name for yarn versions
-        if (this.versionData.getWorldVersion() >= 1963) {
+        if (this.versionData.getWorldVersion() >= 1963
+                // WHAT THE FUCK DID HAPPEN HERE? HOW?
+                // "Minecraft.Server / f7d695aa1ba843f2aa0cbc2ece6aea49"
+                // HOW IS THIS A VERSION ID??? HOW DID THIS GET DEPLOYED ANYWHERE?
+                && this.versionData.getWorldVersion() != 2836) {
             version = this.versionData.getId();
 
             // versions before 1.14.3-pre1 (and some combat tests) include the current

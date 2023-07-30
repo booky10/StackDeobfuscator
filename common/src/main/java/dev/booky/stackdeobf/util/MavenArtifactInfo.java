@@ -25,6 +25,7 @@ public class MavenArtifactInfo {
         this.classifier = classifier;
     }
 
+    // based on https://stackoverflow.com/a/4605816 + comments
     private static String encodePath(String input) {
         byte[] inputBytes = input.getBytes(StandardCharsets.UTF_8);
         String processedInput = new String(inputBytes, StandardCharsets.ISO_8859_1);
@@ -51,7 +52,7 @@ public class MavenArtifactInfo {
     }
 
     private static boolean isUnsafe(char ch) {
-        return ch > 128 || " %$&+,/:;=?@<>#%".indexOf(ch) >= 0;
+        return ch > 128 || " %$&,/:;=?@<>#%".indexOf(ch) >= 0;
     }
 
     public static MavenArtifactInfo parse(String repoUrl, String info) {

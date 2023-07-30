@@ -45,7 +45,8 @@ public class IntermediaryMappingProvider extends AbstractMappingProvider {
             return CompletableFuture.completedFuture(null);
         }
 
-        return MAPPINGS_ARTIFACT.buildVerifiableUrl(this.versionData.getId(), "jar", HASH_TYPE, executor)
+        String fabricatedVersion = getFabricatedVersion(this.versionData);
+        return MAPPINGS_ARTIFACT.buildVerifiableUrl(fabricatedVersion, "jar", HASH_TYPE, executor)
                 .thenCompose(verifiableUrl -> {
                     LOGGER.info("Downloading intermediary mappings for {}...", this.versionData.getId());
                     return verifiableUrl.get(executor);

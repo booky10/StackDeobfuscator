@@ -13,10 +13,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public abstract class AbstractMappingProvider {
 
     protected static final Logger LOGGER = LogManager.getLogger("StackDeobfuscator");
+    private static final Pattern ID_COMMIT_HASH_PATTERN = Pattern.compile("^(.+) / [0-9a-f]{32}$");
 
     protected final VersionData versionData;
     protected final String name;
@@ -24,6 +27,44 @@ public abstract class AbstractMappingProvider {
     protected AbstractMappingProvider(VersionData versionData, String name) {
         this.versionData = versionData;
         this.name = name;
+    }
+
+    protected static String getFabricatedVersion(VersionData versionData) {
+        String version;
+        // after 1.14.2, fabric switched to using the version id instead of the name for yarn versions
+        if (versionData.getWorldVersion() >= 1963
+                // WHAT THE FUCK DID HAPPEN HERE? HOW?
+                // "Minecraft.Server / f7d695aa1ba843f2aa0cbc2ece6aea49"
+                // HOW IS THIS A VERSION ID??? HOW DID THIS GET DEPLOYED ANYWHERE?
+                && versionData.getWorldVersion() != 2836) {
+            version = versionData.getId();
+
+            // versions before 1.14.3-pre1 (and some combat tests) include the current
+            // commit hash in the version.json id; just remove it using a regex everywhere
+            Matcher matcher = ID_COMMIT_HASH_PATTERN.matcher(version);
+            if (matcher.matches()) {
+                version = matcher.group(1);
+            }
+        } else {
+            version = versionData.getName();
+        }
+
+        // the first combat test used a very obscure "id", just replace it manually
+        if ("1.14.3 - Combat Test".equals(version)) {
+            version = "1.14_combat-212796";
+        }
+
+        // these just randomly have dots replaced with underscores, I don't want
+        // to look into why, just do this manually for now
+        //
+        // 1_15_combat-1+build.1 also exists, but is completely gone from maven metadata?
+        return switch (version) {
+            // @formatter:off // what are you doing?
+            case "1.15_combat-6", "1.16_combat-0"
+                    -> version.replace('.', '_');
+            // @formatter:on
+            default -> version;
+        };
     }
 
     private static Path getCacheDir(Path fallbackDir) {

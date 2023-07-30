@@ -36,7 +36,7 @@ public final class StackDeobfConfig {
     public static StackDeobfConfig load(VersionData versionData, Path configPath) throws IOException {
         Gson gson = new GsonBuilder()
                 .disableHtmlEscaping().setPrettyPrinting()
-                .registerTypeAdapter(AbstractMappingProvider.class, new MappingProviderSerializer(versionData))
+                .registerTypeHierarchyAdapter(AbstractMappingProvider.class, new MappingProviderSerializer(versionData))
                 .create();
 
         StackDeobfConfig config;

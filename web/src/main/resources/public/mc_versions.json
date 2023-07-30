@@ -3421,16 +3421,6 @@
     "stable": false
   },
   {
-    "id": "1.14.2 Pre-Release 1 / 2056354a32e6471e87ba433088cc91eb",
-    "name": "1.14.2 Pre-Release 1",
-    "release_target": "1.14.2",
-    "world_version": 1958,
-    "protocol_version": 481,
-    "pack_version": 4,
-    "build_time": "2019-05-16T15:38:50+00:00",
-    "stable": false
-  },
-  {
     "id": "1.14.1 / a8f78b0d43c74598a199d6d80cda413f",
     "name": "1.14.1",
     "release_target": "1.14.1",

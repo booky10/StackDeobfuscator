@@ -1,10 +1,15 @@
 ## v1.4.0
 
+### Fixes
+
 - Handle `/` being used instead of `.` as package separator
     - E.g. `net/minecraft/class_5272` is now remapped correctly
       to `net/minecraft/client/item/ModelPredicateProviderRegistry`
 - Fix some classes causing errors when trying to remap (
   Fixes [#7](https://github.com/booky10/StackDeobfuscator/issues/7))
+
+### New
+
 - Separate fabric integration and common remapping code
     - Adds web subproject for remapping text to different mappings/versions
 - The checksum of all files is now verified on download

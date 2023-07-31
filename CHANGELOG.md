@@ -1,11 +1,21 @@
 ## v1.4.0
 
-- Separate fabric integration and common remapping code
-  - Adds web subproject for remapping text to different mappings/versions
-- Fix some classes causing errors when trying to remap (Fixes [#7](https://github.com/booky10/StackDeobfuscator/issues/7))
 - Handle `/` being used instead of `.` as package separator
     - E.g. `net/minecraft/class_5272` is now remapped correctly
       to `net/minecraft/client/item/ModelPredicateProviderRegistry`
+- Fix some classes causing errors when trying to remap (
+  Fixes [#7](https://github.com/booky10/StackDeobfuscator/issues/7))
+- Separate fabric integration and common remapping code
+    - Adds web subproject for remapping text to different mappings/versions
+- The checksum of all files is now verified on download
+    - Intermediary/Quilt mappings always use sha512
+    - Mojang mappings always use md5/sha1
+    - Yarn uses sha512 on modern version, but falls back to sha1 for 19w02a, Combat Test 4 and all versions older than
+      1.15 (except 1.14.4)
+- Some fixes to support more versions
+- Mapping/Metadata downloads will be retried 3x before being cancelled, if:
+    - The server returns a non 2xx response code
+    - Checksum verification fails
 
 ## v1.3.2
 

@@ -1,3 +1,9 @@
+## v1.4.1
+
+- Add 23w31a and 23w32a version data to web viewer
+- Select latest stable version by default in web viewer
+- Correctly set mixin refmap name (resolves crash when Noxesium is installed)
+
 ## v1.4.0
 
 ### Fixes

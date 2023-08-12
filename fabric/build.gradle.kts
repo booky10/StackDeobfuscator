@@ -33,3 +33,9 @@ tasks {
     remapJar { archiveBaseName.set(jar.get().archiveBaseName) }
     remapSourcesJar { archiveBaseName.set(jar.get().archiveBaseName) }
 }
+
+loom {
+    mixin {
+        defaultRefmapName.set(rootProject.name)
+    }
+}

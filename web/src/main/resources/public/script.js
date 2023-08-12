@@ -88,6 +88,10 @@ function loadVersions() {
                 option.style.display = "none";
             }
             versionSelect.appendChild(option);
+
+            if (versionSelect.value == -1 && version.stable) {
+                versionSelect.value = option.value;
+            }
         });
         versionSelect.remove(0);
         console.log(`Added ${versions.length} possible minecraft versions`)

@@ -1,5 +1,21 @@
 [
   {
+    "id": "23w32a",
+    "name": "23w32a",
+    "world_version": 3569,
+    "series_id": "main",
+    "protocol_version": 1073741969,
+    "pack_version": {
+      "resource": 17,
+      "data": 17
+    },
+    "build_time": "2023-08-09T12:11:55+00:00",
+    "java_component": "java-runtime-gamma",
+    "java_version": 17,
+    "stable": false,
+    "use_editor": false
+  },
+  {
     "id": "23w31a",
     "name": "23w31a",
     "world_version": 3567,

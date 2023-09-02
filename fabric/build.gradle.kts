@@ -36,6 +36,6 @@ tasks {
 
 loom {
     mixin {
-        defaultRefmapName.set(rootProject.name)
+        defaultRefmapName.set("${rootProject.name.lowercase()}-refmap.json")
     }
 }

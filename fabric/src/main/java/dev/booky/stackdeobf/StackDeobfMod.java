@@ -9,6 +9,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 
@@ -30,6 +31,10 @@ public class StackDeobfMod implements ModInitializer {
         if (mappings != null) {
             mappings.remapStackTrace(elements);
         }
+    }
+
+    public static @Nullable CachedMappings getMappings() {
+        return mappings;
     }
 
     public static VersionData getVersionData() {

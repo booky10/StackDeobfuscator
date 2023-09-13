@@ -1,5 +1,21 @@
 [
   {
+    "id": "1.20.2-pre4",
+    "name": "1.20.2 Pre-Release 4",
+    "world_version": 3575,
+    "series_id": "main",
+    "protocol_version": 1073741975,
+    "pack_version": {
+      "resource": 18,
+      "data": 18
+    },
+    "build_time": "2023-09-13T15:04:18+00:00",
+    "java_component": "java-runtime-gamma-snapshot",
+    "java_version": 17,
+    "stable": false,
+    "use_editor": false
+  },
+  {
     "id": "1.20.2-pre3",
     "name": "1.20.2 Pre-Release 3",
     "world_version": 3574,

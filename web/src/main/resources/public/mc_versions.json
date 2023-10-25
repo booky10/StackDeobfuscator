@@ -1,5 +1,37 @@
 [
   {
+    "id": "23w43a",
+    "name": "23w43a",
+    "world_version": 3686,
+    "series_id": "main",
+    "protocol_version": 1073741983,
+    "pack_version": {
+      "resource": 20,
+      "data": 22
+    },
+    "build_time": "2023-10-25T13:31:53+00:00",
+    "java_component": "java-runtime-gamma",
+    "java_version": 17,
+    "stable": false,
+    "use_editor": false
+  },
+  {
+    "id": "23w42a",
+    "name": "23w42a",
+    "world_version": 3684,
+    "series_id": "main",
+    "protocol_version": 1073741981,
+    "pack_version": {
+      "resource": 19,
+      "data": 21
+    },
+    "build_time": "2023-10-18T11:34:29+00:00",
+    "java_component": "java-runtime-gamma",
+    "java_version": 17,
+    "stable": false,
+    "use_editor": false
+  },
+  {
     "id": "23w41a",
     "name": "23w41a",
     "world_version": 3681,

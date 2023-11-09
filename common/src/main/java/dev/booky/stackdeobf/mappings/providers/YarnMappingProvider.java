@@ -38,7 +38,7 @@ public class YarnMappingProvider extends BuildBasedMappingProvider {
         Set<VersionFlag> flags = EnumSet.noneOf(VersionFlag.class);
         if (versionData.getWorldVersion() < V1_15
                 && versionData.getWorldVersion() != V1_14_4) {
-            flags.add(VersionFlag.NO_SHA512);
+            flags.add(VersionFlag.NO_SHA256);
 
             if (versionData.getWorldVersion() <= V19W42A) {
                 flags.add(VersionFlag.NO_V2);
@@ -46,7 +46,7 @@ public class YarnMappingProvider extends BuildBasedMappingProvider {
         }
 
         if (versionData.getWorldVersion() == V1_15_COMBAT_1) {
-            flags.add(VersionFlag.NO_SHA512);
+            flags.add(VersionFlag.NO_SHA256);
         }
 
         return flags;
@@ -58,8 +58,8 @@ public class YarnMappingProvider extends BuildBasedMappingProvider {
     }
 
     private static VerifiableUrl.HashType getHashType(VersionData versionData) {
-        return getVersionFlags(versionData).contains(VersionFlag.NO_SHA512)
-                ? VerifiableUrl.HashType.SHA1 : VerifiableUrl.HashType.SHA512;
+        return getVersionFlags(versionData).contains(VersionFlag.NO_SHA256)
+                ? VerifiableUrl.HashType.SHA1 : VerifiableUrl.HashType.SHA256;
     }
 
     @Override
@@ -70,6 +70,6 @@ public class YarnMappingProvider extends BuildBasedMappingProvider {
 
     private enum VersionFlag {
         NO_V2, // or just no checksums for it
-        NO_SHA512,
+        NO_SHA256,
     }
 }

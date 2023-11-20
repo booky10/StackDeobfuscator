@@ -1,5 +1,21 @@
 [
   {
+    "id": "1.20.3-pre1",
+    "name": "1.20.3 Pre-Release 1",
+    "world_version": 3693,
+    "series_id": "main",
+    "protocol_version": 1073741988,
+    "pack_version": {
+      "resource": 22,
+      "data": 26
+    },
+    "build_time": "2023-11-20T15:34:25+00:00",
+    "java_component": "java-runtime-gamma",
+    "java_version": 17,
+    "stable": false,
+    "use_editor": false
+  },
+  {
     "id": "23w46a",
     "name": "23w46a",
     "world_version": 3691,

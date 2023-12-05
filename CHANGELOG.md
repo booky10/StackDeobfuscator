@@ -1,3 +1,10 @@
+## v1.4.2
+
+- Add more version data to web viewer (versions 23w33a to 1.20.3)
+- Use sha256 instead of sha512 checksums for yarn (works around sha512 checksum being wrong sometimes)
+- Fix mixin refmap filename looking weird
+- Add static mappings getter to fabric mod class
+
 ## v1.4.1
 
 - Add 23w31a and 23w32a version data to web viewer

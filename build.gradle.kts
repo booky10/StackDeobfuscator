@@ -52,7 +52,16 @@ subprojects {
         }
 
         withType<Jar>().configureEach {
-            archiveBaseName.set("${rootProject.name}${project.name.capitalized()}")
+            val joinedName = "${rootProject.name}${project.name.capitalized()}"
+            archiveBaseName.set(joinedName)
+
+            sequenceOf("COPYING", "COPYING.LESSER")
+                .map { rootProject.layout.projectDirectory.file(it) }
+                .forEach { sourceFile ->
+                    from(sourceFile) {
+                        rename { return@rename "${it}_$joinedName" }
+                    }
+                }
         }
     }
 }

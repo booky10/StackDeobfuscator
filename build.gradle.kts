@@ -43,6 +43,15 @@ subprojects {
             artifactId = "${rootProject.name}-${project.name}".lowercase()
             from(components["java"])
         }
+
+        if (rootProject.ext.has("publishingRepo")) {
+            val publishingRepo = rootProject.ext.get("publishingRepo") as String
+            repositories.maven(publishingRepo) {
+                name = url.host.replace(".", "")
+                authentication { create<BasicAuthentication>("basic") }
+                credentials(PasswordCredentials::class)
+            }
+        }
     }
 
     tasks {

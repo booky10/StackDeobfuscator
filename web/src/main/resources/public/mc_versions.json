@@ -1,5 +1,21 @@
 [
   {
+    "id": "24w06a",
+    "name": "24w06a",
+    "world_version": 3815,
+    "series_id": "main",
+    "protocol_version": 1073742000,
+    "pack_version": {
+      "resource": 26,
+      "data": 31
+    },
+    "build_time": "2024-02-07T14:44:15+00:00",
+    "java_component": "java-runtime-gamma",
+    "java_version": 17,
+    "stable": false,
+    "use_editor": false
+  },
+  {
     "id": "24w05b",
     "name": "24w05b",
     "world_version": 3811,

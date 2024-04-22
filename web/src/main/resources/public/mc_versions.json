@@ -1,5 +1,21 @@
 [
   {
+    "id": "1.20.5-rc3",
+    "name": "1.20.5 Release Candidate 3",
+    "world_version": 3836,
+    "series_id": "main",
+    "protocol_version": 1073742015,
+    "pack_version": {
+      "resource": 32,
+      "data": 41
+    },
+    "build_time": "2024-04-22T13:39:54+00:00",
+    "java_component": "java-runtime-delta",
+    "java_version": 21,
+    "stable": false,
+    "use_editor": false
+  },
+  {
     "id": "1.20.5-rc2",
     "name": "1.20.5 Release Candidate 2",
     "world_version": 3835,

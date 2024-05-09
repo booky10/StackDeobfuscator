@@ -5,7 +5,11 @@
 - Modrinth: https://modrinth.com/mod/stackdeobf
 - Curseforge: https://curseforge.com/minecraft/mc-mods/stackdeobf
 
-See [wiki](https://github.com/booky10/StackDeobfuscator/wiki/Configuration) for configuration
+The configuration is documented on the [wiki](https://github.com/booky10/StackDeobfuscator/wiki/Configuration).
+
+A hosted web-version is available at [stackdeobf.booky.dev](https://stackdeobf.booky.dev/).
+See [wiki](https://github.com/booky10/StackDeobfuscator/wiki/Web-Remapping#installation-self-hosting) for self-hosting
+this page.
 
 ## What does this mod do?
 

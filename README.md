@@ -111,4 +111,4 @@ The output jar can be found in `build` → `libs`.
 
 ## License
 
-This project is licensed under [**LGPL-3.0-only**](./LICENSE) unless specified otherwise.
+This project is licensed under [**LGPL-3.0-only**](./COPYING.LESSER) unless specified otherwise.

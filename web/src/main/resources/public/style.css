@@ -1,7 +1,6 @@
 html {
     background-color: #161819;
     color: white;
-    max-width: 1024px;
     margin: 1em;
 }
 
@@ -12,6 +11,11 @@ html {
 
 .flex-vert {
     flex-direction: column;
+}
+
+.flex-root {
+    min-height: calc(100vh - 2.8em);
+    align-items: stretch;
 }
 
 #input {
@@ -26,6 +30,14 @@ html {
 	white-space: pre;
 	overflow-wrap: normal;
 	overflow-x: auto;
+}
+
+header.flex {
+    align-items: center;
+}
+
+footer.flex {
+    justify-content: center;
 }
 
 @media screen and (max-width: 518px) {

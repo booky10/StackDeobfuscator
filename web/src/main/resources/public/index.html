@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="style.css?v=3" rel="stylesheet" type="text/css"/>
+    <link href="style.css?v=5" rel="stylesheet" type="text/css"/>
     <script defer src="script.js?v=6" type="text/javascript"></script>
 
     <meta content="width=device-width, initial-scale=1" name="viewport">
@@ -20,66 +20,75 @@
 
 <body>
 
-<div class="flex flex-vert">
-    <span style="font-weight: bold; font-size: 2em;">StackDeobfuscator</span>
-    <span style="margin-bottom: 1em">
-        Enter Stacktrace or other text containing
-        <a href="https://github.com/FabricMC/intermediary">fabric intermediary</a>
-        names, select the target version and click "Deobfuscate"
-    </span>
-
-    <div>
-        <label>
+<div class="flex flex-vert flex-root">
+    <header class="flex flex-vert">
+        <span style="font-weight: bold; font-size: 2em;">StackDeobfuscator</span>
+        <span style="margin-bottom: 1em">
+            Enter Stacktrace or other text containing
+            <a href="https://github.com/FabricMC/intermediary">fabric intermediary</a>
+            names, select the target version and click "Deobfuscate"
+        </span>
+    </header>
+    <main class="flex flex-vert" style="flex-grow: 1;">
+        <div>
+            <label>
             <textarea autocomplete="off" autocorrect="off" autofocus id="input" placeholder="Insert Stacktrace here"
-                      rows="42" spellcheck="false"></textarea>
-        </label>
-    </div>
+                      rows="30" spellcheck="false"></textarea>
+            </label>
+        </div>
 
-    <div>
-        <label>
-            <input autocomplete="off" autocorrect="off" id="urlinput"
-                   placeholder="Insert Log URL here (WARNING: WILL REPLACE TEXT INPUT)"
-                   spellcheck="false" style="width: 100%">
-        </label>
-    </div>
+        <div>
+            <label>
+                <input autocomplete="off" autocorrect="off" id="urlinput"
+                       placeholder="Insert Log URL here (WARNING: WILL REPLACE TEXT INPUT)"
+                       spellcheck="false" style="width: 100%; max-width: 35em;">
+            </label>
+        </div>
 
-    <label class="flex">
-        <span>Mappings:</span>
-        <select id="mappings">
-            <option value="yarn">Yarn</option>
-            <option value="quilt">Quilt</option>
-            <option value="mojang">Mojang</option>
-        </select>
-    </label>
-    <div class="flex flex-long">
         <label class="flex">
-            <span>Version:</span>
-            <select id="version">
-                <option value="-1">Loading...</option>
+            <span>Mappings:</span>
+            <select id="mappings">
+                <option value="yarn">Yarn</option>
+                <option value="quilt">Quilt</option>
+                <option value="mojang">Mojang</option>
             </select>
         </label>
-        <label>
-            <input checked id="stableversions" onclick="updateVersions()" type="checkbox">
-            <span>Only stable versions</span>
+        <div class="flex flex-long">
+            <label class="flex">
+                <span>Version:</span>
+                <select id="version">
+                    <option value="-1">Loading...</option>
+                </select>
+            </label>
+            <label>
+                <input checked id="stableversions" onclick="updateVersions()" type="checkbox">
+                <span>Only stable versions</span>
+            </label>
+        </div>
+        <label class="flex">
+            <span>Environment:</span>
+            <select id="environment">
+                <option value="client">Client</option>
+                <option value="server">Server</option>
+            </select>
         </label>
-    </div>
-    <label class="flex">
-        <span>Environment:</span>
-        <select id="environment">
-            <option value="client">Client</option>
-            <option value="server">Server</option>
-        </select>
-    </label>
 
-    <div class="flex">
-        <button id="deobfuscate">Deobfuscate</button>
-        <button id="copy">Copy</button>
-    </div>
+        <div class="flex">
+            <button id="deobfuscate">Deobfuscate</button>
+            <button id="copy">Copy</button>
+        </div>
 
-    <div class="flex flex-vert" style="margin-top: 1em;">
-        <span id="status"></span>
-        <code id="message"></code>
-    </div>
+        <div class="flex flex-vert" style="margin-top: 1em;">
+            <span id="status"></span>
+            <code id="message"></code>
+        </div>
+    </main>
+    <footer class="flex">
+        <span>
+            Runs on <a href="https://github.com/booky10/StackDeobfuscator">open-source software</a>,
+            licensed under <a href="https://www.gnu.org/licenses/lgpl+gpl-3.0.txt">LGPL-3.0</a>
+        </span>
+    </footer>
 </div>
 
 </body>

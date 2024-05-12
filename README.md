@@ -98,12 +98,12 @@ Yarn and Quilt refresh their version every 48 hours to check for updates.
 
 | Mappings | Compatible Minecraft Versions               | Download Size (zipped¹)²               | Cached Size (gzipped)²              |
 |----------|---------------------------------------------|----------------------------------------|-------------------------------------|
-| Yarn     | 18w49a (1.14 snapshot) or higher            | `1.3 MiB`                              | `1.3 MiB`                           |
-| Quilt    | 1.18.2 or higher                            | `1.3 MiB` (+`1.1 MiB` below 1.19.2)    | `1.3 MiB` (+`1.1 MiB` below 1.19.2) |
-| Mojang   | 1.14.4 and 19w36a (1.15 snapshot) or higher | `8.5 MiB` (uncompressed) + `526.8 KiB` | `1.2 MiB` + `526.3 KiB`             |
+| Yarn     | 18w49a (1.14 snapshot) or higher            | `1.4 MiB`                              | `1.4 MiB`                           |
+| Quilt    | 1.18.2 or higher                            | `1.4 MiB` (+`1.1 MiB` below 1.19.2)    | `1.4 MiB` (+`1.1 MiB` below 1.19.2) |
+| Mojang   | 1.14.4 and 19w36a (1.15 snapshot) or higher | `9.0 MiB` (uncompressed) + `559.1 KiB` | `1.3 MiB` + `558.6 KiB`             |
 
 ¹: Mojang mappings are not compressed<br>
-²: Sizes as of 5th December 2023 (1.20.3 is latest)
+²: Sizes as of 12th May 2024 (1.20.6 is latest)
 
 ## Building
 

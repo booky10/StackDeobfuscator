@@ -21,6 +21,13 @@
 <body>
 
 <div class="flex flex-vert">
+    <span style="font-weight: bold; font-size: 2em;">StackDeobfuscator</span>
+    <span style="margin-bottom: 1em">
+        Enter Stacktrace or other text containing
+        <a href="https://github.com/FabricMC/intermediary">fabric intermediary</a>
+        names, select the target version and click "Deobfuscate"
+    </span>
+
     <div>
         <label>
             <textarea autocomplete="off" autocorrect="off" autofocus id="input" placeholder="Insert Stacktrace here"
@@ -66,7 +73,7 @@
         <button id="copy">Copy</button>
     </div>
 
-    <div class="flex flex-vert">
+    <div class="flex flex-vert" style="margin-top: 1em;">
         <span id="status"></span>
         <code id="message"></code>
     </div>

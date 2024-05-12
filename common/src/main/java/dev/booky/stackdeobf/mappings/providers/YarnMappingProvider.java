@@ -19,6 +19,12 @@ public class YarnMappingProvider extends BuildBasedMappingProvider {
 
     private static final String REPO_URL = System.getProperty("stackdeobf.yarn.repo-url", "https://maven.fabricmc.net");
 
+    // default to false as fabric's maven repository sometimes
+    // returns invalid checksums after an update for maven-metadata.xml files;
+    // this should work around https://github.com/booky10/StackDeobfuscator/issues/10
+    private static final boolean VERIFY_YARN_METADATA_CHECKSUMS =
+            Boolean.getBoolean("stackdeobf.yarn.verify-metadata-checksums");
+
     private static final MavenArtifactInfo MAPPINGS_ARTIFACT_V1 = MavenArtifactInfo.parse(REPO_URL,
             System.getProperty("stackdeobf.yarn.mappings-artifact.v1", "net.fabricmc:yarn"));
     private static final MavenArtifactInfo MAPPINGS_ARTIFACT_V2 = MavenArtifactInfo.parse(REPO_URL,
@@ -60,6 +66,14 @@ public class YarnMappingProvider extends BuildBasedMappingProvider {
     private static VerifiableUrl.HashType getHashType(VersionData versionData) {
         return getVersionFlags(versionData).contains(VersionFlag.NO_SHA256)
                 ? VerifiableUrl.HashType.SHA1 : VerifiableUrl.HashType.SHA256;
+    }
+
+    @Override
+    public VerifiableUrl.HashType getMetaHashType() {
+        if (!VERIFY_YARN_METADATA_CHECKSUMS) {
+            return VerifiableUrl.HashType.DUMMY;
+        }
+        return super.getMetaHashType();
     }
 
     @Override

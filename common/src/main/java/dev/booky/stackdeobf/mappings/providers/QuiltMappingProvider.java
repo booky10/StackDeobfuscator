@@ -87,7 +87,7 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
         }
 
         return future
-                .thenCompose($ -> HASHED_MAPPINGS_ARTIFACT.buildVerifiableUrl(this.versionData.getId(), "jar", this.hashType, executor))
+                .thenCompose($ -> HASHED_MAPPINGS_ARTIFACT.buildVerifiableUrl(this.versionData.getId(), "jar", this.getJarHashType(), executor))
                 .thenCompose(verifiableUrl -> {
                     LOGGER.info("Downloading hashed {} mappings for {}...", this.name, this.versionData.getId());
                     return verifiableUrl.get(executor);

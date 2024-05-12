@@ -46,6 +46,14 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
         return MappingFormat.TINY_2;
     }
 
+    public VerifiableUrl.HashType getMetaHashType() {
+        return this.hashType;
+    }
+
+    public VerifiableUrl.HashType getJarHashType() {
+        return this.hashType;
+    }
+
     @Override
     protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
         String version = getFabricatedVersion(this.versionData);
@@ -59,7 +67,7 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
                         return CompletableFuture.completedFuture(null);
                     }
 
-                    return this.artifactInfo.buildVerifiableUrl(build, "jar", this.hashType, executor)
+                    return this.artifactInfo.buildVerifiableUrl(build, "jar", this.getJarHashType(), executor)
                             .thenCompose(verifiableUrl -> {
                                 LOGGER.info("Downloading {} mappings jar for build {}...", this.name, build);
                                 return verifiableUrl.get(executor);
@@ -99,7 +107,7 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
                 }
             }
 
-            return this.artifactInfo.buildVerifiableMetaUrl(this.hashType, executor).thenCompose(verifiableUrl -> {
+            return this.artifactInfo.buildVerifiableMetaUrl(this.getMetaHashType(), executor).thenCompose(verifiableUrl -> {
                 LOGGER.info("Fetching latest {} build...", this.name);
                 return verifiableUrl.get(executor).thenApply(resp -> {
                     Document document;

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="style.css" rel="stylesheet" type="text/css"/>
+    <link href="style.css?v=2" rel="stylesheet" type="text/css"/>
     <script defer src="script.js?v=6" type="text/javascript"></script>
 
     <meta content="width=device-width, initial-scale=1" name="viewport">
@@ -20,8 +20,7 @@
 
 <body>
 
-
-<div class="grid">
+<div class="flex flex-vert">
     <div>
         <label>
             <textarea autocomplete="off" autocorrect="off" autofocus id="input" placeholder="Insert Stacktrace here"
@@ -31,21 +30,22 @@
 
     <div>
         <label>
-            <input autocomplete="off" autocorrect="off" id="urlinput" placeholder="Insert Log URL here (WARNING: WILL REPLACE TEXT INPUT)"
+            <input autocomplete="off" autocorrect="off" id="urlinput"
+                   placeholder="Insert Log URL here (WARNING: WILL REPLACE TEXT INPUT)"
                    spellcheck="false" style="width: 100%">
         </label>
     </div>
 
-    <label>
-        Mappings:
+    <label class="flex">
+        <span>Mappings:</span>
         <select id="mappings">
             <option value="yarn">Yarn</option>
             <option value="quilt">Quilt</option>
             <option value="mojang">Mojang</option>
         </select>
     </label>
-    <label>
-        Version:
+    <label class="flex">
+        <span>Version:</span>
         <select id="version">
             <option value="-1">Loading...</option>
         </select>
@@ -53,20 +53,20 @@
             <input checked id="stableversions" onclick="updateVersions()" type="checkbox">Only Stable
         </label>
     </label>
-    <label style="padding-bottom: 1em;">
-        Environment:
+    <label class="flex">
+        <span>Environment:</span>
         <select id="environment">
             <option value="client">Client</option>
             <option value="server">Server</option>
         </select>
     </label>
 
-    <div>
+    <div class="flex">
         <button id="deobfuscate">Deobfuscate</button>
         <button id="copy">Copy</button>
     </div>
 
-    <div>
+    <div class="flex flex-vert">
         <span id="status"></span>
         <code id="message"></code>
     </div>

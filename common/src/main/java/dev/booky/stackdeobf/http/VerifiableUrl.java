@@ -3,6 +3,7 @@ package dev.booky.stackdeobf.http;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.URI;
 import java.net.http.HttpRequest;
@@ -41,6 +42,11 @@ public final class VerifiableUrl {
     }
 
     public static CompletableFuture<VerifiableUrl> resolve(URI url, HashType hashType, Executor executor, int depth) {
+        if (hashType == HashType.DUMMY) {
+            VerifiableUrl dummyUrl = new VerifiableUrl(url, HashType.DUMMY, HashResult.emptyResult());
+            return CompletableFuture.completedFuture(dummyUrl);
+        }
+
         LOGGER.info("Downloading {} hash for {}...", hashType, url);
         URI hashUrl = URI.create(url + hashType.getExtension());
         return HttpUtil.getAsync(hashUrl, executor, depth)
@@ -82,6 +88,10 @@ public final class VerifiableUrl {
 
     public CompletableFuture<HttpResponseContainer> get(Executor executor, int depth) {
         return HttpUtil.getAsync(this.uri, executor, depth).thenCompose(resp -> {
+            if (this.hashType == HashType.DUMMY) {
+                return CompletableFuture.completedFuture(resp);
+            }
+
             HashResult hashResult = this.hashType.hash(resp.getBody());
             LOGGER.info("Verifying {} hash {} for {}...",
                     this.hashType, hashResult, this.uri);
@@ -104,22 +114,33 @@ public final class VerifiableUrl {
         MD5(".md5", "MD5"),
         SHA1(".sha1", "SHA-1"),
         SHA256(".sha256", "SHA-256"),
-        SHA512(".sha512", "SHA-512");
+        SHA512(".sha512", "SHA-512"),
+        DUMMY(null, null);
 
-        private final String extension;
-        private final MessageDigest digester;
+        private final @Nullable String extension;
+        private final @Nullable MessageDigest digester;
 
-        HashType(String extension, String algoName) {
+        HashType(@Nullable String extension, @Nullable String algoName) {
+            if ((extension == null) != (algoName == null)) {
+                throw new IllegalArgumentException("Can't create half-valid hash type");
+            }
             this.extension = extension;
 
-            try {
-                this.digester = MessageDigest.getInstance(algoName);
-            } catch (NoSuchAlgorithmException exception) {
-                throw new IllegalStateException("Illegal algorithm provided: " + algoName, exception);
+            if (algoName != null) {
+                try {
+                    this.digester = MessageDigest.getInstance(algoName);
+                } catch (NoSuchAlgorithmException exception) {
+                    throw new IllegalStateException("Illegal algorithm provided: " + algoName, exception);
+                }
+            } else {
+                this.digester = null;
             }
         }
 
         public HashResult hash(byte[] bytes) {
+            if (this.digester == null) {
+                throw new UnsupportedOperationException();
+            }
             byte[] resultBytes;
             synchronized (this.digester) {
                 resultBytes = this.digester.digest(bytes);
@@ -128,6 +149,9 @@ public final class VerifiableUrl {
         }
 
         public String getExtension() {
+            if (this.extension == null) {
+                throw new UnsupportedOperationException();
+            }
             return this.extension;
         }
     }
@@ -138,6 +162,10 @@ public final class VerifiableUrl {
 
         public HashResult(String string) {
             this(decode(string));
+        }
+
+        public static HashResult emptyResult() {
+            return new HashResult(new byte[0]);
         }
 
         private static byte[] decode(String string) {
@@ -152,6 +180,10 @@ public final class VerifiableUrl {
                 bytes[i / 2] = (byte) b;
             }
             return bytes;
+        }
+
+        public boolean isEmpty() {
+            return this.bytes.length == 0;
         }
 
         @Override

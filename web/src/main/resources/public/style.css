@@ -2,11 +2,14 @@ html {
     background-color: #161819;
     color: white;
     margin: 1em;
+    color-scheme: dark !important;
+    font-family: 'Liberation Sans', 'Open Sans', 'Arial', 'Verdana', 'Helvetica', 'sans-serif';
 }
 
 .flex {
     display: flex;
     gap: 0.42em;
+    align-items: stretch;
 }
 
 .flex-vert {
@@ -14,34 +17,55 @@ html {
 }
 
 .flex-root {
-    min-height: calc(100vh - 2.8em);
+    min-height: 95vh;
     align-items: stretch;
 }
 
-#input {
-    background-color: #161819;
-    color: white;
-    width: 100%;
+.big-btn {
+    padding: 0.75em;
+    font-weight: bold;
+    font-size: 1.125em;
+}
 
-    border: 1px solid white;
-    border-radius: 5px;
-    border-width: 2px;
+.border-box {
+    /* https://stackoverflow.com/a/39068185 */
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+#input {
+    width: 100%;
 
 	white-space: pre;
 	overflow-wrap: normal;
 	overflow-x: auto;
+	resize: none;
 }
 
 header.flex {
     align-items: center;
 }
 
+footer {
+    margin-top: 3em;
+}
+
 footer.flex {
     justify-content: center;
 }
 
+#urlinput {
+    width: 30em;
+    max-width: 35em;
+}
+
 @media screen and (max-width: 518px) {
-  .flex-long {
-    flex-direction: column;
-  }
+    .flex-long {
+        flex-direction: column;
+    }
+
+    #urlinput {
+        width: 25em;
+    }
 }

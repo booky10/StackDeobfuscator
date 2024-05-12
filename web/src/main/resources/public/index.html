@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="style.css?v=5" rel="stylesheet" type="text/css"/>
+    <link href="style.css?v=9" rel="stylesheet" type="text/css"/>
     <script defer src="script.js?v=6" type="text/javascript"></script>
 
-    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta charset="UTF-8">
 
@@ -30,52 +30,55 @@
         </span>
     </header>
     <main class="flex flex-vert" style="flex-grow: 1;">
-        <div>
+        <div style="">
             <label>
             <textarea autocomplete="off" autocorrect="off" autofocus id="input" placeholder="Insert Stacktrace here"
-                      rows="30" spellcheck="false"></textarea>
+                      rows="30" spellcheck="false" class="border-box"></textarea>
             </label>
         </div>
 
-        <div>
-            <label>
-                <input autocomplete="off" autocorrect="off" id="urlinput"
-                       placeholder="Insert Log URL here (WARNING: WILL REPLACE TEXT INPUT)"
-                       spellcheck="false" style="width: 100%; max-width: 35em;">
-            </label>
-        </div>
+        <div class="flex flex-vert" style="align-items: center; margin-top: 0.5em;">
+            <div class="flex flex-vert">
+                <div>
+                    <label>
+                        <input autocomplete="off" autocorrect="off" id="urlinput"
+                               placeholder="Insert Log URL here (WARNING: WILL REPLACE TEXT INPUT)"
+                               spellcheck="false">
+                    </label>
+                </div>
+                <label class="flex">
+                    <span>Mappings:</span>
+                    <select id="mappings">
+                        <option value="mojang">Mojang</option>
+                        <option value="yarn">Yarn</option>
+                        <option value="quilt">Quilt</option>
+                    </select>
+                </label>
+                <div class="flex flex-long">
+                    <label class="flex">
+                        <span>Version:</span>
+                        <select id="version" style="max-width: 10em;">
+                            <option value="-1">Loading...</option>
+                        </select>
+                    </label>
+                    <label>
+                        <input checked id="stableversions" onclick="updateVersions()" type="checkbox">
+                        <span>Only stable versions</span>
+                    </label>
+                </div>
+                <label class="flex">
+                    <span>Environment:</span>
+                    <select id="environment">
+                        <option value="client">Client</option>
+                        <option value="server">Server</option>
+                    </select>
+                </label>
 
-        <label class="flex">
-            <span>Mappings:</span>
-            <select id="mappings">
-                <option value="yarn">Yarn</option>
-                <option value="quilt">Quilt</option>
-                <option value="mojang">Mojang</option>
-            </select>
-        </label>
-        <div class="flex flex-long">
-            <label class="flex">
-                <span>Version:</span>
-                <select id="version">
-                    <option value="-1">Loading...</option>
-                </select>
-            </label>
-            <label>
-                <input checked id="stableversions" onclick="updateVersions()" type="checkbox">
-                <span>Only stable versions</span>
-            </label>
-        </div>
-        <label class="flex">
-            <span>Environment:</span>
-            <select id="environment">
-                <option value="client">Client</option>
-                <option value="server">Server</option>
-            </select>
-        </label>
-
-        <div class="flex">
-            <button id="deobfuscate">Deobfuscate</button>
-            <button id="copy">Copy</button>
+                <div class="flex" style="justify-content: space-around; margin-top: 1em;">
+                    <button class="big-btn" id="deobfuscate">Deobfuscate</button>
+                    <button class="big-btn" id="copy">Copy</button>
+                </div>
+            </div>
         </div>
 
         <div class="flex flex-vert" style="margin-top: 1em;">

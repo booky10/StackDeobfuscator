@@ -3,6 +3,7 @@
 - Add more version data to [web viewer](https://stackdeobf.booky.dev/) (1.20.4-rc1 to 24w19b)
 - Don't verify checksums for yarn maven metadata at all ([#10](https://github.com/booky10/StackDeobfuscator/issues/10))
     - This can't be reliably checked, as fabric's maven cache returns outdated files for a while after an update
+- Improve styling of web viewer
 
 ## v1.4.2
 

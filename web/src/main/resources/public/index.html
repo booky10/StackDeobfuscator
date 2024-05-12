@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="style.css?v=2" rel="stylesheet" type="text/css"/>
+    <link href="style.css?v=3" rel="stylesheet" type="text/css"/>
     <script defer src="script.js?v=6" type="text/javascript"></script>
 
     <meta content="width=device-width, initial-scale=1" name="viewport">
@@ -51,15 +51,18 @@
             <option value="mojang">Mojang</option>
         </select>
     </label>
-    <label class="flex">
-        <span>Version:</span>
-        <select id="version">
-            <option value="-1">Loading...</option>
-        </select>
-        <label>
-            <input checked id="stableversions" onclick="updateVersions()" type="checkbox">Only Stable
+    <div class="flex flex-long">
+        <label class="flex">
+            <span>Version:</span>
+            <select id="version">
+                <option value="-1">Loading...</option>
+            </select>
         </label>
-    </label>
+        <label>
+            <input checked id="stableversions" onclick="updateVersions()" type="checkbox">
+            <span>Only stable versions</span>
+        </label>
+    </div>
     <label class="flex">
         <span>Environment:</span>
         <select id="environment">

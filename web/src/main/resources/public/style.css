@@ -27,3 +27,9 @@ html {
 	overflow-wrap: normal;
 	overflow-x: auto;
 }
+
+@media screen and (max-width: 518px) {
+  .flex-long {
+    flex-direction: column;
+  }
+}

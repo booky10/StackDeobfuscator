@@ -34,12 +34,12 @@ public class IntermediaryMappingProvider extends AbstractMappingProvider {
     private MemoryMappingTree mappings;
 
     // only used as a conversion step (mojang + hashed quilt)
-    IntermediaryMappingProvider(VersionData versionData) {
+    public IntermediaryMappingProvider(VersionData versionData) {
         super(versionData, "intermediary");
     }
 
     @Override
-    protected CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
+    public CompletableFuture<Void> downloadMappings0(Path cacheDir, Executor executor) {
         String fabricatedVersion = getFabricatedVersion(this.versionData);
 
         this.path = cacheDir.resolve("intermediary_" + fabricatedVersion + ".gz");
@@ -64,7 +64,7 @@ public class IntermediaryMappingProvider extends AbstractMappingProvider {
     }
 
     @Override
-    protected CompletableFuture<Void> parseMappings0(Executor executor) {
+    public CompletableFuture<Void> parseMappings0(Executor executor) {
         return CompletableFuture.supplyAsync(() -> {
             MemoryMappingTree mappings = new MemoryMappingTree();
 

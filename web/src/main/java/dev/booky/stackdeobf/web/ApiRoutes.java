@@ -7,6 +7,7 @@ import dev.booky.stackdeobf.http.HttpResponseContainer;
 import dev.booky.stackdeobf.http.HttpUtil;
 import dev.booky.stackdeobf.mappings.CachedMappings;
 import dev.booky.stackdeobf.mappings.providers.AbstractMappingProvider;
+import dev.booky.stackdeobf.mappings.providers.IntermediaryMappingProvider;
 import dev.booky.stackdeobf.mappings.providers.MojangMappingProvider;
 import dev.booky.stackdeobf.mappings.providers.QuiltMappingProvider;
 import dev.booky.stackdeobf.mappings.providers.YarnMappingProvider;
@@ -15,16 +16,21 @@ import io.javalin.Javalin;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.util.NaiveRateLimit;
+import net.fabricmc.mappingio.tree.MappingTree;
+import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import static dev.booky.stackdeobf.util.VersionConstants.V18W49A;
 import static dev.booky.stackdeobf.util.VersionConstants.V19W36A;
@@ -97,6 +103,9 @@ public final class ApiRoutes {
                     throw new BadRequestResponse("Unsupported version for mojang mappings specified: " + version);
                 }
                 yield new MojangMappingProvider(versionData, environment);
+            }
+            case "intermediary" -> {
+                yield new IntermediaryMappingProvider(versionData);
             }
             default -> throw new BadRequestResponse("Unsupported mappings specified: " + mappings);
         };
@@ -175,7 +184,34 @@ public final class ApiRoutes {
             long remapStep = System.nanoTime();
             ctx.header("Mappings-Time", Long.toString(remapStep - startStep));
 
-            String remappedStr = mappings.remapString(ctx.body());
+            String version = Objects.requireNonNullElse(ctx.queryParam("version"), DEFAULT_MAPPINGS_VERSION);
+            IntermediaryMappingProvider provider = new IntermediaryMappingProvider(this.versionData.get(Integer.parseInt(version)));
+            provider.downloadMappings0(CACHE_DIR, Executors.newSingleThreadExecutor())
+                    .thenCompose(a -> provider.parseMappings0(Executors.newSingleThreadExecutor()))
+                    .join();
+            MemoryMappingTree tree = provider.getMappings();
+
+            Pattern pattern = Pattern.compile("[\\n \\[\\]]([a-z]{1,3})[\\n.,:\\[\\]](?!minecraft)([a-z_]{1,3}(?![a-z_]))?");
+            String replacedStr = pattern.matcher(ctx.body()).replaceAll(result -> {
+                if (result.group().equals(" by:")) {
+                    return result.group();
+                }
+
+                String className = result.group(1);
+                String methodName = Objects.requireNonNullElse(result.group(2), "");
+                String rmethodName = methodName;
+                if (!methodName.isEmpty()) {
+                    List<? extends MappingTree.MethodMapping> mapped = ((MappingTree.ClassMapping) tree.getClass(className))
+                            .getMethods().stream().filter(mapp -> mapp.getSrcName().equals(methodName)).toList();
+                    if (mapped.size() == 1) {
+                        rmethodName = mapped.get(0).getDstName(0);
+                    }
+                }
+                return result.group().replace(className + (methodName.isEmpty() ? "" : "." + methodName),
+                        tree.mapClassName(className, 0).replace('/', '.')
+                                + (methodName.isEmpty() ? "" : "." + rmethodName));
+            });
+            String remappedStr = mappings.remapString(replacedStr);
             ctx.result(remappedStr);
 
             long resultStep = System.nanoTime();

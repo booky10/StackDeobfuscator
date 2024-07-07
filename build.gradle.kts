@@ -60,7 +60,8 @@ subprojects {
         }
 
         withType<Jar>().configureEach {
-            archiveBaseName.set(project.name.replace("-", ""))
+            destinationDirectory = rootProject.layout.buildDirectory.dir("libs")
+            archiveBaseName = project.name.replace("-", "")
 
             sequenceOf("COPYING", "COPYING.LESSER")
                 .map { rootProject.layout.projectDirectory.file(it) }

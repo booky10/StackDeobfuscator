@@ -32,12 +32,12 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: StackDeobfuscator-Fabric-Artifacts
-          path: fabric/build/libs
+          path: build/libs/StackDeobfuscatorFabric-*
           if-no-files-found: error
 
       - name: capture web build artifacts
         uses: actions/upload-artifact@v3
         with:
           name: StackDeobfuscator-Web-Artifacts
-          path: web/build/libs
+          path: build/libs/StackDeobfuscatorWeb-*
           if-no-files-found: error

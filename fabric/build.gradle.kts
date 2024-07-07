@@ -23,9 +23,14 @@ tasks {
         }
     }
 
-    // not correctly set
-    remapJar { archiveBaseName.set(jar.get().archiveBaseName) }
-    remapSourcesJar { archiveBaseName.set(jar.get().archiveBaseName) }
+    sequenceOf(remapJar, remapSourcesJar).forEach { task ->
+        task {
+            archiveBaseName = jar.get().archiveBaseName
+            // this somehow errors when trying to just reuse
+            // the destination directory set in normal jar task
+            destinationDirectory = rootProject.layout.buildDirectory.dir("libs")
+        }
+    }
 }
 
 loom {

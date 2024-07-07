@@ -1,9 +1,11 @@
 ## v1.4.3
 
-- Add more version data to [web viewer](https://stackdeobf.booky.dev/) (1.20.4-rc1 to 24w19b)
+- Add more version data to [web viewer](https://stackdeobf.booky.dev/) (1.20.4-rc1 to 1.21)
 - Don't verify checksums for yarn maven metadata at all ([#10](https://github.com/booky10/StackDeobfuscator/issues/10))
     - This can't be reliably checked, as fabric's maven cache returns outdated files for a while after an update
 - Improve styling of web viewer
+- Update library to prevent issues with other mods updating mapping-io library
+    - Caused by old [breaking changes](https://github.com/FabricMC/mapping-io/commit/6a06f2a86ffad9f5615688e17e33a119fe682b70#diff-734687dc5c161203c349415385c620d1c6278456f66466e1956d1a65ab943b51) in fabric's mapping-io library
 
 ## v1.4.2
 

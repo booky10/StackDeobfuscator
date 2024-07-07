@@ -8,7 +8,7 @@ plugins {
 val bootClass = "$group.stackdeobf.web.StackDeobfMain"
 
 dependencies {
-    implementation(projects.common)
+    implementation(projects.stackDeobfuscatorCommon)
 
     // required mc libraries
     implementation(libs.bundles.builtin)

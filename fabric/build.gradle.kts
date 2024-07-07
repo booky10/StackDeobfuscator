@@ -9,7 +9,7 @@ dependencies {
     modImplementation(libs.fabric.loader)
 
     // include common project
-    include(implementation(projects.common)!!)
+    include(implementation(projects.stackDeobfuscatorCommon)!!)
 
     // "include" doesn't include jars transitively
     include(libs.fabric.mappingio)

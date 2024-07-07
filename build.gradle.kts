@@ -1,4 +1,3 @@
-import org.gradle.configurationcache.extensions.capitalized
 import java.io.ByteArrayOutputStream
 
 plugins {
@@ -33,14 +32,14 @@ subprojects {
     java {
         withSourcesJar()
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(17))
-            vendor.set(JvmVendorSpec.ADOPTIUM)
+            languageVersion = JavaLanguageVersion.of(17)
+            vendor = JvmVendorSpec.ADOPTIUM
         }
     }
 
     publishing {
         publications.create<MavenPublication>("maven") {
-            artifactId = "${rootProject.name}-${project.name}".lowercase()
+            artifactId = project.name.lowercase()
             from(components["java"])
         }
 
@@ -57,18 +56,17 @@ subprojects {
     tasks {
         withType<JavaCompile> {
             options.encoding = Charsets.UTF_8.name()
-            options.release.set(17)
+            options.release = 17
         }
 
         withType<Jar>().configureEach {
-            val joinedName = "${rootProject.name}${project.name.capitalized()}"
-            archiveBaseName.set(joinedName)
+            archiveBaseName.set(project.name.replace("-", ""))
 
             sequenceOf("COPYING", "COPYING.LESSER")
                 .map { rootProject.layout.projectDirectory.file(it) }
                 .forEach { sourceFile ->
                     from(sourceFile) {
-                        rename { return@rename "${it}_$joinedName" }
+                        rename { return@rename "${it}_${rootProject.name.lowercase()}" }
                     }
                 }
         }

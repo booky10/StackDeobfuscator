@@ -79,7 +79,7 @@ public class YarnMappingProvider extends BuildBasedMappingProvider {
     @Override
     protected MappingFormat getMappingFormat() {
         return getVersionFlags(this.versionData).contains(VersionFlag.NO_V2)
-                ? MappingFormat.TINY : MappingFormat.TINY_2;
+                ? MappingFormat.TINY_FILE : MappingFormat.TINY_2_FILE;
     }
 
     private enum VersionFlag {

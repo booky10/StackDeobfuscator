@@ -3,6 +3,7 @@ package dev.booky.stackdeobf.mappings;
 
 import net.fabricmc.mappingio.MappedElementKind;
 import net.fabricmc.mappingio.MappingVisitor;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -54,7 +55,7 @@ public class MappingCacheVisitor implements MappingVisitor {
     }
 
     @Override
-    public boolean visitMethodVar(int lvtRowIndex, int lvIndex, int startOpIdx, String srcName) {
+    public boolean visitMethodVar(int lvtRowIndex, int lvIndex, int startOpIdx, int endOpIdx, @Nullable String srcName) {
         return false;
     }
 

@@ -43,7 +43,7 @@ public class BuildBasedMappingProvider extends AbstractMappingProvider {
     }
 
     protected MappingFormat getMappingFormat() {
-        return MappingFormat.TINY_2;
+        return MappingFormat.TINY_2_FILE;
     }
 
     public VerifiableUrl.HashType getMetaHashType() {

@@ -119,7 +119,8 @@ public final class QuiltMappingProvider extends BuildBasedMappingProvider {
                     try (InputStream fileInput = Files.newInputStream(this.hashedPath);
                          GZIPInputStream gzipInput = new GZIPInputStream(fileInput);
                          Reader reader = new InputStreamReader(gzipInput)) {
-                        MappingReader.read(reader, MappingFormat.TINY_2, mappings);
+                        MappingReader.read(reader, MappingFormat.TINY_2_FILE
+                                , mappings);
                     } catch (IOException exception) {
                         throw new RuntimeException(exception);
                     }

@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "id": "stackdeobfuscator",
+  "id": "stackdeobfuscator-common",
   "version": "${version}",
 
-  "name": "StackDeobfuscator",
-  "description": "Deobfuscates stacktraces to yarn/quilt/mojang mappings",
+  "name": "StackDeobfuscator Common",
+  "description": "Common library for remapping stacktraces to different mappings",
 
   "authors": [
     "booky10"
@@ -19,31 +19,24 @@
   "license": "LGPL-3.0-only",
   "environment": "*",
 
-  "entrypoints": {
-    "main": [
-      "dev.booky.stackdeobf.StackDeobfMod"
-    ]
-  },
-
-  "mixins": [
-    "stackdeobf.mixins.json"
-  ],
-
   "depends": {
-    "fabricloader": ">=0.14.11",
-    "minecraft": ">=1.14-alpha.18.49.a",
     "java": ">=17"
   },
 
   "custom": {
     "modmenu": {
+      "badges": [
+        "library"
+      ],
       "links": {
         "modmenu.wiki": "https://github.com/booky10/StackDeobfuscator/wiki",
         "modmenu.discord": "https://discord.gg/XSB7jn9",
         "modmenu.github_releases": "https://github.com/booky10/StackDeobfuscator/releases",
         "modmenu.modrinth": "https://modrinth.com/mod/stackdeobf",
         "modmenu.curseforge": "https://www.curseforge.com/minecraft/mc-mods/stackdeobf"
-      }
+      },
+      "parent": "stackdeobfuscator",
+      "update_checker": false
     }
   }
 }

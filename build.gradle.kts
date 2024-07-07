@@ -20,7 +20,7 @@ subprojects {
     apply<JavaLibraryPlugin>()
     apply<MavenPublishPlugin>()
 
-    version = "1.4.2+${getGitCommit()}"
+    version = "1.4.3+${getGitCommit()}"
     group = "dev.booky"
 
     repositories {

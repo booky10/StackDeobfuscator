@@ -1,5 +1,3 @@
-import org.gradle.configurationcache.extensions.capitalized
-
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 rootProject.name = "StackDeobfuscator"
@@ -20,7 +18,7 @@ setupSubProject("fabric")
 setupSubProject("web")
 
 fun setupSubProject(name: String) {
-    val projectName = "${rootProject.name}-${name.capitalized()}"
+    val projectName = "${rootProject.name}-${name[0].titlecase() + name.substring(1)}"
     include(projectName)
     project(":$projectName").projectDir = file(name)
 }

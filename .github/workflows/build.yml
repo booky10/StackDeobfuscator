@@ -59,6 +59,8 @@ jobs:
           echo -n 'file_name=' >> "$GITHUB_OUTPUT" && ls . | grep all.jar >> "$GITHUB_OUTPUT"
       - name: Deploy web
         uses: burnett01/rsync-deployments@7.0.1
+        env:
+          INPUT_CENSOR_HOSTNAME: "${{ secrets.DEPLOY_SERVER_CENSOR }}"
         with:
           switches: -av --delete
           path: "${{ steps.name_finder.outputs.file_name }}"
@@ -74,6 +76,7 @@ jobs:
           INPUT_REMOTE_TRIGGER_SCRIPT: "${{ secrets.DEPLOY_SCRIPT }}"
           INPUT_PATH: "${{ steps.name_finder.outputs.file_name }}"
         run: |
-          source agent-start "$GITHUB_ACTION"
-          echo "$INPUT_REMOTE_KEY" | agent-add
-          ssh -o StrictHostKeyChecking=no -- "$INPUT_REMOTE_USER"@"$INPUT_REMOTE_HOST" "$INPUT_REMOTE_TRIGGER_SCRIPT" "$INPUT_PATH"
+          echo "$INPUT_REMOTE_KEY" > privkey
+          chmod 700 privkey
+          ssh -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i privkey -- "$INPUT_REMOTE_USER"@"$INPUT_REMOTE_HOST" "$INPUT_REMOTE_TRIGGER_SCRIPT" "$INPUT_PATH"
+          rm -f privkey

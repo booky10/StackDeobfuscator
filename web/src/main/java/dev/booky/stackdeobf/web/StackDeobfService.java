@@ -6,7 +6,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import dev.booky.stackdeobf.util.VersionData;
 import io.javalin.Javalin;
-import io.javalin.plugin.bundled.CorsPluginConfig;
+import io.javalin.plugin.bundled.CorsPluginConfig.CorsRule;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -66,8 +66,8 @@ public final class StackDeobfService {
         LOGGER.info("Creating javalin service...");
         this.javalin = Javalin.create(config -> {
             config.showJavalinBanner = false;
-            config.plugins.enableCors(cors -> cors.add(CorsPluginConfig::anyHost));
-            config.plugins.enableRouteOverview("/api");
+            config.bundledPlugins.enableCors(cors -> cors.addRule(CorsRule::anyHost));
+            config.bundledPlugins.enableRouteOverview("/api");
             config.staticFiles.add(files -> { /**/ });
         });
 
@@ -94,7 +94,7 @@ public final class StackDeobfService {
 
         LOGGER.info("Closing javalin server...");
         if (this.javalin != null) {
-            this.javalin.close();
+            this.javalin.stop();
         }
 
         LOGGER.info("Shutting down... Goodbye (°_°)");

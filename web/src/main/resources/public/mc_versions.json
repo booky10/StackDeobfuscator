@@ -1,5 +1,21 @@
 [
   {
+    "id": "1.21.4",
+    "name": "1.21.4",
+    "world_version": 4189,
+    "series_id": "main",
+    "protocol_version": 769,
+    "pack_version": {
+      "resource": 46,
+      "data": 61
+    },
+    "build_time": "2024-12-03T10:09:48+00:00",
+    "java_component": "java-runtime-delta",
+    "java_version": 21,
+    "stable": true,
+    "use_editor": false
+  },
+  {
     "id": "1.21.4-rc3",
     "name": "1.21.4 Release Candidate 3",
     "world_version": 4188,

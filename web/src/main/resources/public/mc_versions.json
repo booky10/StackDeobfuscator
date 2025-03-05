@@ -1,5 +1,21 @@
 [
   {
+    "id": "25w10a",
+    "name": "25w10a",
+    "world_version": 4319,
+    "series_id": "main",
+    "protocol_version": 1073742062,
+    "pack_version": {
+      "resource": 54,
+      "data": 70
+    },
+    "build_time": "2025-03-05T13:08:09+00:00",
+    "java_component": "java-runtime-delta",
+    "java_version": 21,
+    "stable": false,
+    "use_editor": false
+  },
+  {
     "id": "25w09b",
     "name": "25w09b",
     "world_version": 4318,

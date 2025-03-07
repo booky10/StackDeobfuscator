@@ -5,15 +5,15 @@ import dev.booky.stackdeobf.config.StackDeobfConfig;
 import dev.booky.stackdeobf.mappings.CachedMappings;
 import dev.booky.stackdeobf.util.RemappingRewritePolicy;
 import dev.booky.stackdeobf.util.VersionData;
-import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 
-public class StackDeobfMod implements ModInitializer {
+public class StackDeobfMod implements PreLaunchEntrypoint {
 
     private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger("StackDeobfuscator");
     private static final VersionData VERSION_DATA = VersionData.fromClasspath();
@@ -42,7 +42,7 @@ public class StackDeobfMod implements ModInitializer {
     }
 
     @Override
-    public void onInitialize() {
+    public void onPreLaunch() {
         StackDeobfConfig config = this.loadConfig();
 
         Path gameDir = FabricLoader.getInstance().getGameDir();

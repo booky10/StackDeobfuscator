@@ -20,7 +20,7 @@
   "environment": "*",
 
   "entrypoints": {
-    "main": [
+    "preLaunch": [
       "dev.booky.stackdeobf.StackDeobfMod"
     ]
   },

@@ -12,10 +12,13 @@ import org.apache.logging.log4j.core.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
 
 public class StackDeobfMod implements PreLaunchEntrypoint {
 
     private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger("StackDeobfuscator");
+
+    private static final String CONFIG_FILE_NAME = "stackdeobf.json";
     private static final VersionData VERSION_DATA = VersionData.fromClasspath();
 
     private static CachedMappings mappings;
@@ -49,22 +52,29 @@ public class StackDeobfMod implements PreLaunchEntrypoint {
         Path cacheDir = gameDir.resolve("stackdeobf_mappings");
 
         // don't need to print errors, already done after loading
-        CachedMappings.create(cacheDir, config.getMappingProvider()).thenAccept(mappings -> {
-            StackDeobfMod.mappings = mappings;
+        CompletableFuture<Void> loadFuture = CachedMappings.create(cacheDir, config.getMappingProvider())
+                .thenAccept(mappings -> {
+                    StackDeobfMod.mappings = mappings;
 
-            if (config.hasLogInjectEnabled()) {
-                LOGGER.info("Injecting into root logger...");
+                    if (config.hasLogInjectEnabled()) {
+                        LOGGER.info("Injecting into root logger...");
 
-                RemappingRewritePolicy policy = new RemappingRewritePolicy(
-                        mappings, config.shouldRewriteEveryLogMessage());
-                policy.inject((Logger) LogManager.getRootLogger());
-            }
-        });
+                        RemappingRewritePolicy policy = new RemappingRewritePolicy(
+                                mappings, config.shouldRewriteEveryLogMessage());
+                        policy.inject((Logger) LogManager.getRootLogger());
+                    }
+                });
+
+        if (config.isSyncLoading()) {
+            LOGGER.warn("Waiting for mapping loading to finish, this may take some time");
+            LOGGER.warn("To disable synchronized mapping loading, disable 'synchronized-loading' in " + CONFIG_FILE_NAME);
+            loadFuture.join();
+        }
     }
 
     private StackDeobfConfig loadConfig() {
         try {
-            Path configPath = FabricLoader.getInstance().getConfigDir().resolve("stackdeobf.json");
+            Path configPath = FabricLoader.getInstance().getConfigDir().resolve(CONFIG_FILE_NAME);
             return StackDeobfConfig.load(VERSION_DATA, configPath);
         } catch (Throwable throwable) {
             throw new RuntimeException("Exception occurred while loading stack deobfuscator configuration", throwable);

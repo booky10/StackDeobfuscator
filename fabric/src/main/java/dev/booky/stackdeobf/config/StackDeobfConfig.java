@@ -16,7 +16,7 @@ import java.nio.file.Path;
 
 public final class StackDeobfConfig {
 
-    private static final int CURRENT_VERSION = 2;
+    private static final int CURRENT_VERSION = 3;
 
     @SerializedName("config-version-dont-touch-this")
     private int version;
@@ -29,6 +29,9 @@ public final class StackDeobfConfig {
 
     @SerializedName("mapping-type")
     private AbstractMappingProvider mappingProvider;
+
+    @SerializedName("synchronized-loading")
+    private boolean syncLoading = false;
 
     private StackDeobfConfig() {
     }
@@ -53,6 +56,9 @@ public final class StackDeobfConfig {
 
             // migrate the config format to the newer version
 
+            if (config.version < 3) {
+                config.syncLoading = false;
+            }
             if (config.version < 2) {
                 config.rewriteEveryLogMessage = false;
             }
@@ -80,5 +86,9 @@ public final class StackDeobfConfig {
 
     public AbstractMappingProvider getMappingProvider() {
         return this.mappingProvider;
+    }
+
+    public boolean isSyncLoading() {
+        return this.syncLoading;
     }
 }

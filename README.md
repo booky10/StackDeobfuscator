@@ -7,7 +7,7 @@
 
 The configuration is documented on the [wiki](https://github.com/booky10/StackDeobfuscator/wiki/Configuration).
 
-A hosted web-version is available at [stackdeobf.booky.dev](https://stackdeobf.booky.dev/).
+A hosted web-version is available at [stackdeobf.net](https://stackdeobf.net/).
 See [wiki](https://github.com/booky10/StackDeobfuscator/wiki/Web-Remapping#installation-self-hosting) for self-hosting
 this page.
 

@@ -36,7 +36,19 @@ import static dev.booky.stackdeobf.util.VersionConstants.V23W13A_OR_B;
 
 public final class ApiRoutes {
 
-    private static final String HASTEBIN_API_TOKEN = System.getProperty("web.hastebin-api-token");
+    private static final String HASTEBIN_API_TOKEN;
+
+    static {
+        // try to resolve via system property; if there is no system property to be found,
+        // try to resolve via environment variable
+        String tokenProp = System.getProperty("web.hastebin-api-token");
+        if (tokenProp == null || tokenProp.isBlank()) {
+            String tokenEnv = System.getenv("HASTEBIN_API_TOKEN");
+            HASTEBIN_API_TOKEN = tokenEnv == null || tokenEnv.isBlank() ? null : tokenEnv;
+        } else {
+            HASTEBIN_API_TOKEN = tokenProp;
+        }
+    }
 
     private static final Path CACHE_DIR = Path.of(System.getProperty("mappings.cachedir", "mappings"));
     private static final String DEFAULT_MAPPINGS_PROVIDER = "yarn";

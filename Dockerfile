@@ -4,7 +4,7 @@ COPY ./ /work
 WORKDIR /work
 
 RUN apt-get update && apt-get install -y git && \
-        ./gradlew --no-daemon :StackDeobfuscator-Web:shadowJar
+        ./gradlew --no-daemon :StackDeobfuscator-Web:shadowJar -PnoFabric
 
 FROM eclipse-temurin:21-jre
 

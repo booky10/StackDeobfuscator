@@ -2,10 +2,13 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 rootProject.name = "StackDeobfuscator"
 
-pluginManagement {
-    repositories {
-        maven("https://maven.fabricmc.net/")
-        gradlePluginPortal()
+val noFabric = gradle.startParameter.projectProperties.containsKey("noFabric")
+if (!noFabric) {
+    pluginManagement {
+        repositories {
+            maven("https://maven.fabricmc.net/")
+            gradlePluginPortal()
+        }
     }
 }
 
@@ -14,7 +17,9 @@ plugins {
 }
 
 setupSubProject("common")
-setupSubProject("fabric")
+if (!noFabric) {
+    setupSubProject("fabric")
+}
 setupSubProject("web")
 
 fun setupSubProject(name: String) {

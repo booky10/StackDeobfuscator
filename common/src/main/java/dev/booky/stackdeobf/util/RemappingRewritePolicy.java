@@ -52,6 +52,8 @@ public final class RemappingRewritePolicy implements RewritePolicy {
 
         Log4jLogEvent.Builder builder = new Log4jLogEvent.Builder(source);
         if (this.rewriteMessages) {
+            builder.setLoggerName(this.mappings.remapString(source.getLoggerName()));
+
             String message = source.getMessage().getFormattedMessage();
             message = this.mappings.remapString(message);
             builder.setMessage(new SimpleMessage(message));

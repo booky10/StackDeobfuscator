@@ -1,5 +1,23 @@
 [
   {
+    "id": "25w45a",
+    "name": "25w45a",
+    "world_version": 4660,
+    "series_id": "main",
+    "protocol_version": 1073742101,
+    "pack_version": {
+      "resource_major": 73,
+      "resource_minor": 0,
+      "data_major": 93,
+      "data_minor": 0
+    },
+    "build_time": "2025-11-04T13:47:52+00:00",
+    "java_component": "java-runtime-delta",
+    "java_version": 21,
+    "stable": false,
+    "use_editor": false
+  },
+  {
     "id": "25w44a",
     "name": "25w44a",
     "world_version": 4659,

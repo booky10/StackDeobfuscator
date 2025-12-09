@@ -1,7 +1,7 @@
 # Stack Deobfuscator
 
 > [!WARNING]
-> This mod will become obsolete when Minecraft starts publishing [releases without obfuscation](https://www.minecraft.net/en-us/article/removing-obfuscation-in-java-edition), though it will still be maintained for older versions.
+> This mod is obsolete for all Minecraft versions newer than 1.21.11. It will still be maintained for older versions.
 
 ## Downloads
 
